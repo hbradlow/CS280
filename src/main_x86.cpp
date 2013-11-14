@@ -28,7 +28,6 @@ int main(){
 
         frame = threshold_frame(frame);
 
-
         //display the frame
         imshow("Output",frame);
 
