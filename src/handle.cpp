@@ -15,6 +15,9 @@
 using namespace cv;
 using namespace std;
 
+int max_sum = 0;
+int min_sum = 255;
+
 #if ARM
 void threshold_frame(char* frame,int rows, int cols){
 #else
@@ -24,6 +27,8 @@ Mat threshold_frame(Mat frame){
     Mat output = Mat::zeros( rows, cols, CV_8UC3 );
 #endif
 
+    int prev_max = max_sum;
+    int prev_min = min_sum;
     for(int j = 0; j<cols; j++){
         for(int i = 0; i<rows; i++){
 
@@ -36,15 +41,17 @@ Mat threshold_frame(Mat frame){
 #endif
 
             int sum = 255 - (u + v)/2;
-
-#if !ARM
-            output.at<cv::Vec3b>(i,j)[0] = sum;
-            output.at<cv::Vec3b>(i,j)[1] = sum;
-            output.at<cv::Vec3b>(i,j)[2] = sum;
-#endif
+            if(sum>max_sum)
+                max_sum = sum;
+            if(sum<min_sum)
+                min_sum = sum;
+            sum = (sum-prev_min)*(255/(prev_max-prev_min));
 
             //threshold the image
-            if(sum > 200){
+            if(sum > 150){
+#if !ARM
+                output.at<cv::Vec3b>(i,j)[0] = 255;
+#endif
             }
         }
     }
