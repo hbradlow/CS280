@@ -5,6 +5,7 @@
 #include <iostream>
 
 #define ARM 0
+#define DEBUG 0
 
 #define U_ARM(input,i,j) input[((int)(j / 2)) * width + ((int)(i / 2)) * 2];
 #define V_ARM(input,i,j) input[((int)(j / 2)) * width + ((int)(i / 2)) * 2 + 1];
@@ -19,24 +20,48 @@ int max_sum = 0;
 int min_sum = 255;
 
 #if ARM
-void threshold_frame(char* frame,int rows, int cols){
+int image_value(char* input, int i, int j, int channel, int width){
+    return input[j * width + i];
+
+}
 #else
-Mat threshold_frame(Mat frame){
+int image_value(Mat input, int i, int j, int channel, int width){
+    return input.at<cv::Vec3b>(i,j)[channel];
+}
+#endif
+
+struct Component
+{
+    float x;
+    float y;
+    int area;
+#if !ARM
+    Mat image;
+#endif
+};
+
+#if ARM
+Component threshold_frame(char* frame,int rows, int cols){
+    char* components = (char*)malloc(sizeof(char)*rows*cols);
+#else
+Component threshold_frame(Mat frame){
+    int rows = frame.rows;
+    int cols = frame.cols;
+    Mat components = Mat::zeros( rows, cols, CV_8UC3 ); //stores the connected component labels
+#endif
     int max_components = 200; //maximum number of connected components to find
     int equivalent[max_components]; //data structure to handle merging connected components
     int size[max_components]; //count the size of each components
+    int moment_x[max_components]; //calculate the moment x of each component
+    int moment_y[max_components]; //calculate the moment y of each component
     int id = 1; //increasing id to assign to new components
     //initialize the two data structures
     for(int i = 0; i<max_components; i++){
         equivalent[i] = i; //equivalent starts out with each cell pointing to itself
         size[i] = 0; //sizes all start at 0
+        moment_x[i] = 0; //moments start at 0
+        moment_y[i] = 0; //moments start at 0
     }
-
-    int rows = frame.rows;
-    int cols = frame.cols;
-    Mat components = Mat::zeros( rows, cols, CV_8UC3 ); //stores the connected component labels
-    Mat output = Mat::zeros( rows, cols, CV_8UC3 ); //stores the thresholded image
-#endif
 
     //keep track of the previous iteration min/max
     int prev_max = max_sum;
@@ -68,16 +93,13 @@ Mat threshold_frame(Mat frame){
             if(sum > 150){
                 //compute connected components
                 //http://en.wikipedia.org/wiki/Connected-component_labeling#Two-pass
-#if !ARM
-                output.at<cv::Vec3b>(i,j)[0] = 255; //turn on thresholded pixel in output
-
                 //find labels of pixels to the north and west
                 int west = 0;
                 int north = 0;
                 if(i>0)
-                    west = components.at<cv::Vec3b>(i-1,j)[0];
+                    west = image_value(components,i-1,j,0,cols);
                 if(j>0)
-                    north = components.at<cv::Vec3b>(i,j-1)[0];
+                    north = image_value(components,i,j-1,0,cols);
 
                 //consider all cases
                 if(west != 0 and north != 0 and west != north){
@@ -107,10 +129,10 @@ Mat threshold_frame(Mat frame){
             else{
                 //turn the pixel off in output
                 components.at<cv::Vec3b>(i,j)[0] = 0;
-#endif
             }
         }
     }
+#if DEBUG
     //count the number of components
     int num = 0;
     for(int i = 0; i<id; i++){
@@ -119,8 +141,11 @@ Mat threshold_frame(Mat frame){
         }
     }
     cout << "Num components " << num << endl;
+#endif
 
     //merge components
+    int max_size = 0;
+    int max_component = -1;
     for(int j = 0; j<cols; j++){
         for(int i = 0; i<rows; i++){
             //loop down the equivalent structure until the source is found
@@ -130,14 +155,45 @@ Mat threshold_frame(Mat frame){
                 current = equivalent[current];
                 count ++;
             }
+#if DEBUG
             //set the label to the source value
             components.at<cv::Vec3b>(i,j)[0] = current*(255/num);
+#else
+            components.at<cv::Vec3b>(i,j)[0] = current;
+#endif
             size[current] += 1; //keep track of the size of the component
+            moment_x[current] += i;
+            moment_y[current] += j;
+            if(current != 0 && size[current] > max_size){
+                max_size = size[current];
+                max_component = current;
+            }
         }
     }
+#if DEBUG
+    cout << "Max component size " << max_size << endl;
+#endif
+    Component found_component;
+    found_component.x = moment_x[max_component]/(float)max_size;
+    found_component.y = moment_y[max_component]/(float)max_size;
+    found_component.area = max_size;
 #if !ARM
-    return components;
+    for(int j = 0; j<cols; j++){
+        for(int i = 0; i<rows; i++){
+#if DEBUG
+            if(components.at<cv::Vec3b>(i,j)[0] == max_component*(255/num)){
+#else
+            if(components.at<cv::Vec3b>(i,j)[0] == max_component){
+#endif
+                components.at<cv::Vec3b>(i,j)[0] = 255;
+            }
+            else{
+                components.at<cv::Vec3b>(i,j)[0] = 0;
+            }
+        }
+    }
+    found_component.image = components;
+    return found_component;
 #endif
 }
-
 #endif

@@ -26,7 +26,12 @@ int main(){
 
         cvtColor(frame,frame,CV_BGR2YCrCb);
 
-        frame = threshold_frame(frame);
+        Component found = threshold_frame(frame);
+        frame = found.image;
+        if(found.area>40)
+            cout << found.x << " " << found.y << " " << found.area << endl;
+        else
+            cout << -1 << " " << -1 << " " << -1 << endl;
 
         //display the frame
         imshow("Output",frame);
