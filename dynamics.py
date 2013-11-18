@@ -1,3 +1,5 @@
+import numpy as np
+
 class ARModel(object):
     def __init__(self, p, d):
         '''AR(p) model. d = state dimensionality'''
@@ -6,6 +8,12 @@ class ARModel(object):
         self.cov = 1
         self.A = np.zeros((p, d, d))
         self.b = np.zeros(d)
+
+    def predict(self,point):
+        y = self.b.copy()
+        for j in range(self.p):
+            y += self.A[j].dot(point[j,:])
+        return y
 
     def fit(self, data):
         '''data: N x (p+1) x d
@@ -28,13 +36,13 @@ class ARModel(object):
         self.b = soln[self.d*self.d*self.p:]
 
         # manually calculate residual for sanity
-        #r = 0.
-        #for i in range(N):
-        #    y = self.b.copy()
-        #    for j in range(self.p):
-        #        y += self.A[j].dot(data[i,j,:])
-        #    r += np.linalg.norm(data[i,self.p,:] - y)**2
-        #print 'r', r
+        r = 0.
+        for i in range(N):
+            y = self.b.copy()
+            for j in range(self.p):
+                y += self.A[j].dot(data[i,j,:])
+            r += np.linalg.norm(data[i,self.p,:] - y)**2
+        print 'r', r
 
         self.cov = 1./N * residuals[0]
         assert len(self.b) == self.d
