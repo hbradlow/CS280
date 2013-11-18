@@ -45,6 +45,8 @@ test_data = np.empty((p,2))
 for i in range(p):
     test_data[i] = point
     point += np.array([0,.02]) 
+
+test_data = np.random.multivariate_normal([.5,.5],np.eye(2)*.001,p)
 for i in range(p):
     vis.add_drawable(Point2D(400*test_data[i],fill="red"))
 prev = None
