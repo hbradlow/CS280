@@ -5,7 +5,7 @@
 #include <iostream>
 
 #define ARM 0
-#define DEBUG 0
+#define DEBUG 1
 
 #define U_ARM(input,i,j) input[((int)(j / 2)) * width + ((int)(i / 2)) * 2];
 #define V_ARM(input,i,j) input[((int)(j / 2)) * width + ((int)(i / 2)) * 2 + 1];
@@ -19,6 +19,16 @@ using namespace std;
 int max_sum = 0;
 int min_sum = 255;
 
+#if ARM
+void set_image_value(char* input, int i, int j, int channel, int width, int value){
+    input[j * width + i] = value;
+
+}
+#else
+void set_image_value(Mat input, int i, int j, int channel, int width, int value){
+    input.at<cv::Vec3b>(i,j)[channel] = value;
+}
+#endif
 #if ARM
 int image_value(char* input, int i, int j, int channel, int width){
     return input[j * width + i];
@@ -105,30 +115,30 @@ Component threshold_frame(Mat frame){
                 if(west != 0 and north != 0 and west != north){
                     //merge the two components
                     if(west<north){
-                        components.at<cv::Vec3b>(i,j) = west;
+                        set_image_value(components,i,j,0,cols,west);
                         equivalent[north] = west;
                     }
                     else{
-                        components.at<cv::Vec3b>(i,j) = north;
+                        set_image_value(components,i,j,0,cols,north);
                         equivalent[west] = north;
                     }
                 }
                 else if(west != 0){
-                    components.at<cv::Vec3b>(i,j) = west;
+                    set_image_value(components,i,j,0,cols,west);
                 }
                 else if(north != 0){
-                    components.at<cv::Vec3b>(i,j) = north;
+                    set_image_value(components,i,j,0,cols,north);
                 }
                 else{
                     //make a new component
-                    components.at<cv::Vec3b>(i,j) = id;
+                    set_image_value(components,i,j,0,cols,id);
                     if(id<max_components-1)
                         id++;
                 }
             }
             else{
                 //turn the pixel off in output
-                components.at<cv::Vec3b>(i,j)[0] = 0;
+                set_image_value(components,i,j,0,cols,0);
             }
         }
     }
@@ -149,7 +159,7 @@ Component threshold_frame(Mat frame){
     for(int j = 0; j<cols; j++){
         for(int i = 0; i<rows; i++){
             //loop down the equivalent structure until the source is found
-            int current = components.at<cv::Vec3b>(i,j)[0];
+            int current = image_value(components,i,j,0,cols);
             int count = 0;
             while(current != equivalent[current] and count < 30){
                 current = equivalent[current];
@@ -157,9 +167,9 @@ Component threshold_frame(Mat frame){
             }
 #if DEBUG
             //set the label to the source value
-            components.at<cv::Vec3b>(i,j)[0] = current*(255/num);
+            set_image_value(components,i,j,0,cols,current*(255/num));
 #else
-            components.at<cv::Vec3b>(i,j)[0] = current;
+            set_image_value(components,i,j,0,cols,current);
 #endif
             size[current] += 1; //keep track of the size of the component
             moment_x[current] += i;
