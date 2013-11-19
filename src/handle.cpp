@@ -1,27 +1,28 @@
 #ifndef _HANDLE
 #define _HANDLE
-#define ARM 0
-#define DEBUG 1
+#define ARM 1
+#define DEBUG 0
 
 #if ARM
 #else
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
-#endif
-
 #include <iostream>
-
-#define U_ARM(input,i,j) input[((int)(j / 2)) * width + ((int)(i / 2)) * 2];
-#define V_ARM(input,i,j) input[((int)(j / 2)) * width + ((int)(i / 2)) * 2 + 1];
-
-#define U_X86(input,i,j) input.at<cv::Vec3b>(i,j)[1]
-#define V_X86(input,i,j) input.at<cv::Vec3b>(i,j)[2]
-
 using namespace cv;
 using namespace std;
+#endif
 
-int max_sum = 0;
-int min_sum = 255;
+
+#define U_ARM(input,i,j,width) input[((int)(j / 2)) * width + ((int)(i / 2)) * 2];
+#define V_ARM(input,i,j,width) input[((int)(j / 2)) * width + ((int)(i / 2)) * 2 + 1];
+
+#define U_X86(input,i,j,width) input.at<cv::Vec3b>(i,j)[1]
+#define V_X86(input,i,j,width) input.at<cv::Vec3b>(i,j)[2]
+
+
+float prev_max = 0;
+float prev_min = 255;
+float alpha = .2;
 
 #if ARM
 void set_image_value(char* input, int i, int j, int channel, int width, int value){
@@ -48,15 +49,15 @@ struct Component
 {
     float x;
     float y;
-    int area;
+    float area;
 #if !ARM
     Mat image;
 #endif
 };
 
 #if ARM
-Component threshold_frame(char* frame,int rows, int cols){
-    char* components = (char*)malloc(sizeof(char)*rows*cols);
+struct Component threshold_frame(char* frame,int rows, int cols){
+    char components[rows*cols];
 #else
 Component threshold_frame(Mat frame){
     int rows = frame.rows;
@@ -70,7 +71,8 @@ Component threshold_frame(Mat frame){
     int moment_y[max_components]; //calculate the moment y of each component
     int id = 1; //increasing id to assign to new components
     //initialize the two data structures
-    for(int i = 0; i<max_components; i++){
+	int i;
+    for(i = 0; i<max_components; i++){
         equivalent[i] = i; //equivalent starts out with each cell pointing to itself
         size[i] = 0; //sizes all start at 0
         moment_x[i] = 0; //moments start at 0
@@ -78,19 +80,19 @@ Component threshold_frame(Mat frame){
     }
 
     //keep track of the previous iteration min/max
-    int prev_max = max_sum;
-    int prev_min = min_sum;
-
+    int max_sum = 0;
+    int min_sum = 255;
     //loop through the image
-    for(int j = 0; j<cols; j++){
-        for(int i = 0; i<rows; i++){
+	int j;
+    for(j = 0; j<rows; j++){
+        for(i = 0; i<cols; i++){
             //extract the u and v components of a pixel
 #if ARM
-            int u = U_ARM(frame,i,j);
-            int v = V_ARM(frame,i,j);
+            int u = U_ARM(frame,i,j,cols);
+            int v = V_ARM(frame,i,j,cols);
 #else
-            int u = U_X86(frame,i,j);
-            int v = V_X86(frame,i,j);
+            int u = U_X86(frame,i,j,cols);
+            int v = V_X86(frame,i,j,cols);
 #endif
 
             //calculate the inverse of the sum of the channels
@@ -101,8 +103,11 @@ Component threshold_frame(Mat frame){
             if(sum<min_sum)
                 min_sum = sum;
             //scale the sum to fill the range (0-255)
-            sum = (sum-prev_min)*(255/(prev_max-prev_min));
+		if(prev_max-prev_min != 0)
+		{
+		    sum = (sum-prev_min)*(255/(prev_max-prev_min));
 
+		}
             //threshold the image
             if(sum > 150){
                 //compute connected components
@@ -116,7 +121,7 @@ Component threshold_frame(Mat frame){
                     north = image_value(components,i,j-1,0,cols);
 
                 //consider all cases
-                if(west != 0 and north != 0 and west != north){
+                if(west != 0 && north != 0 && west != north){
                     //merge the two components
                     if(west<north){
                         set_image_value(components,i,j,0,cols,west);
@@ -149,7 +154,8 @@ Component threshold_frame(Mat frame){
 #if DEBUG
     //count the number of components
     int num = 0;
-    for(int i = 0; i<id; i++){
+	int i;
+    for(i = 0; i<id; i++){
         if(equivalent[i] == i){
             num++;
         }
@@ -160,12 +166,12 @@ Component threshold_frame(Mat frame){
     //merge components
     int max_size = 0;
     int max_component = -1;
-    for(int j = 0; j<cols; j++){
-        for(int i = 0; i<rows; i++){
+    for(j = 0; j<rows; j++){
+        for(i = 0; i<cols; i++){
             //loop down the equivalent structure until the source is found
             int current = image_value(components,i,j,0,cols);
             int count = 0;
-            while(current != equivalent[current] and count < 30){
+            while(current != equivalent[current] && count < 30 && current<max_components-1){
                 current = equivalent[current];
                 count ++;
             }
@@ -176,8 +182,8 @@ Component threshold_frame(Mat frame){
             set_image_value(components,i,j,0,cols,current);
 #endif
             size[current] += 1; //keep track of the size of the component
-            moment_x[current] += i;
-            moment_y[current] += j;
+            moment_x[current] += j;
+            moment_y[current] += i;
             if(current != 0 && size[current] > max_size){
                 max_size = size[current];
                 max_component = current;
@@ -187,13 +193,20 @@ Component threshold_frame(Mat frame){
 #if DEBUG
     cout << "Max component size " << max_size << endl;
 #endif
-    Component found_component;
+    struct Component found_component;
+	if(max_size>0){
     found_component.x = moment_x[max_component]/(float)max_size;
     found_component.y = moment_y[max_component]/(float)max_size;
+	}
+	else{
+		found_component.x = -1;
+		found_component.y = -1;
+	}
     found_component.area = max_size;
 #if !ARM
-    for(int j = 0; j<cols; j++){
-        for(int i = 0; i<rows; i++){
+	int j,i;
+    for(j = 0; j<rows; j++){
+        for(int i = 0; i<cols; i++){
 #if DEBUG
             if(components.at<cv::Vec3b>(i,j)[0] == max_component*(255/num)){
 #else
@@ -207,7 +220,9 @@ Component threshold_frame(Mat frame){
         }
     }
     found_component.image = components;
-    return found_component;
 #endif
+	prev_max = alpha*max_sum + (1-alpha)*prev_max;
+	prev_min = alpha*min_sum + (1-alpha)*prev_min;
+    return found_component;
 }
 #endif
