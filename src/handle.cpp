@@ -1,11 +1,15 @@
 #ifndef _HANDLE
 #define _HANDLE
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <iostream>
-
 #define ARM 0
 #define DEBUG 1
+
+#if ARM
+#else
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#endif
+
+#include <iostream>
 
 #define U_ARM(input,i,j) input[((int)(j / 2)) * width + ((int)(i / 2)) * 2];
 #define V_ARM(input,i,j) input[((int)(j / 2)) * width + ((int)(i / 2)) * 2 + 1];
