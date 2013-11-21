@@ -55,11 +55,13 @@ class Tracker(object):
             # m step
             new_x = (self.var_z*self.mean_x_prior + self.var_x*(rs[:,None] * self.zs).sum(axis=0)) / (self.var_z + self.var_x*rs.sum())
 
+            """
             # for debugging: compute objective value
             obj_val = np.linalg.norm(new_x - self.mean_x_prior)**2/self.var_x
             for k in range(self.zs.shape[0]):
                 obj_val += rs[k]/self.var_z * np.linalg.norm(self.zs[k] - new_x)**2
             obj_val_history.append(obj_val)
+            """
 
             x_history.append(new_x)
             curr_x = new_x
