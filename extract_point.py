@@ -36,15 +36,16 @@ while True:
     print "num points:",points.shape[0]
     points_list.append(points)
 
-    #cv2.imshow("Main",f)
+
+
+    tracker = Tracker(mean_x_prior=np.array([10,10]),var_x=100000, var_z=.01, noise_density=1, noise_prob=.1)
+    tracker.set_observations(points)
+    curr_x, x_history, obj_val_history = tracker.run_em(init_x=np.array([0,0]))
+    print 'result', curr_x
+
+    top_left = tuple((curr_x*width).astype(int)-np.array([5,5]))
+    bottom_right = tuple((curr_x*width).astype(int)+np.array([5,5]))
+    print top_left
+    cv2.rectangle(f,top_left,bottom_right,(255,0,0),0)
+    cv2.imshow("Main",f)
     key = cv2.waitKey(20)
-
-
-tracker = Tracker(var_x=100000, var_z=.01, noise_density=1, noise_prob=.1)
-tracker.set_observations(points_list)
-curr_x, x_history, obj_val_history = tracker.run_em(init_x=np.array([0,0]))
-print 'result', curr_x
-print x_history
-import matplotlib.pyplot as plt
-plt.plot(obj_val_history)
-plt.show()
