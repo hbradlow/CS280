@@ -64,7 +64,7 @@ struct Component threshold_frame(char* frame,int rows, int cols){
 Component threshold_frame(Mat frame){
     int rows = frame.rows;
     int cols = frame.cols;
-    Mat components = frame;
+    Mat components = Mat::zeros( rows, cols, CV_8UC3 );
 #endif
     int i,j;
     int max_components = 200; //maximum number of connected components to find
