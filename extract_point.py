@@ -6,6 +6,7 @@ capture = cv2.VideoCapture("data/IMG_0776.MOV")
 if not capture.isOpened():
     exit()
 cv2.namedWindow("Main")
+points_list = []
 while True:
     rval, img = capture.read()
     width = img.shape[1]
@@ -21,7 +22,11 @@ while True:
 
     points = np.transpose(np.nonzero(f))
 
-    print points/float(width)
+    points = points/float(width)
+
+    points_list.append(points)
 
     cv2.imshow("Main",f)
     key = cv2.waitKey(20)
+
+#points_list contains the training data
