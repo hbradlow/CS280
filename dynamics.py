@@ -18,34 +18,35 @@ class ARModel(object):
     def fit(self, data):
         '''data: N x (p+1) x d
         N instances of (p+1)-windows of consecutive states'''
+        d, p = self.d, self.p
         if data.ndim == 2: data = data[None,:,:]
-        assert data.shape[1:] == (self.p+1, self.d)
+        assert data.shape[1:] == (p+1, d)
         N = data.shape[0]
         
-        mat = np.zeros((self.d*N, self.d*self.d*self.p + self.d))
-        rhs = np.zeros(self.d*N)
+        mat = np.zeros((d*N, d*d*p + d))
+        rhs = np.zeros(d*N)
         for i in range(N):
-            mat[self.d*i:self.d*(i+1),-self.d:] = np.eye(self.d)
-            x_1_p = data[i,:self.p,:].ravel()
-            for j in range(self.d):
-                mat[self.d*i+j,self.d*self.p*j:self.d*self.p*(j+1)] = x_1_p
-            rhs[self.d*i:self.d*(i+1)] = data[i,self.p,:]
-        soln, residuals, rank, s = np.linalg.lstsq(mat, rhs)
-        A_stacked = soln[:self.d*self.d*self.p].reshape((self.d, self.d*self.p))
-        self.A = np.hsplit(A_stacked, self.p)
-        self.b = soln[self.d*self.d*self.p:]
+            mat[d*i:d*(i+1),-d:] = np.eye(d)
+            x_1_p = data[i,:p,:].ravel()
+            for j in range(d):
+                mat[d*i+j,d*p*j:d*p*(j+1)] = x_1_p
+            rhs[d*i:d*(i+1)] = data[i,p,:]
+        soln, residuals, _, _ = np.linalg.lstsq(mat, rhs)
+        A_stacked = soln[:d*d*p].reshape((d, d*p))
+        self.A = np.hsplit(A_stacked, p)
+        self.b = soln[d*d*p:]
 
         # manually calculate residual for sanity
         r = 0.
         for i in range(N):
             y = self.b.copy()
-            for j in range(self.p):
+            for j in range(p):
                 y += self.A[j].dot(data[i,j,:])
-            r += np.linalg.norm(data[i,self.p,:] - y)**2
+            r += np.linalg.norm(data[i,p,:] - y)**2
         print 'r', r
 
         self.cov = 1./N * residuals[0]
-        assert len(self.b) == self.d
+        assert len(self.b) == d
 
     def eval_log_likelihood(self, data):
         r = 0.
