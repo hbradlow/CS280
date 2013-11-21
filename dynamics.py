@@ -3,9 +3,9 @@ import numpy as np
 class ARModel(object):
     def __init__(self, p, d):
         '''AR(p) model. d = state dimensionality'''
-        self.p = p
-        self.d = d
-        self.cov = 1
+        self.p = p # order of the model
+        self.d = d # state dimensionality
+        self.cov = 1 # covariance = self.cov*eye(d)
         self.A = np.zeros((p, d, d))
         self.b = np.zeros(d)
 
