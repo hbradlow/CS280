@@ -32,8 +32,9 @@ def generate(N=100):
 
 
 class Tracker(object):
-    def __init__(self, var_x, var_z, noise_density, noise_prob):
+    def __init__(self, mean_x_prior, var_x, var_z, noise_density, noise_prob):
         self.var_x = var_x
+        self.mean_x_prior = mean_x_prior
         self.var_z = var_z
         self.noise_density = noise_density
         self.noise_prob = noise_prob
@@ -46,16 +47,16 @@ class Tracker(object):
         x_history = [curr_x]
         obj_val_history = []
 
-        steps = 50
+        steps = 5
         for i in range(steps):
             # e step
             Z = isotropic_mvn_densities(self.zs, curr_x, self.var_z)*self.noise_prob
             rs = Z / (Z + self.noise_density*(1. - self.noise_prob))
             # m step
-            new_x = (self.var_z*curr_x + self.var_x*(rs[:,None] * self.zs).sum(axis=0)) / (self.var_z + self.var_x*rs.sum())
+            new_x = (self.var_z*self.mean_x_prior + self.var_x*(rs[:,None] * self.zs).sum(axis=0)) / (self.var_z + self.var_x*rs.sum())
 
             # for debugging: compute objective value
-            obj_val = np.linalg.norm(new_x - curr_x)**2/self.var_x
+            obj_val = np.linalg.norm(new_x - self.mean_x_prior)**2/self.var_x
             for k in range(self.zs.shape[0]):
                 obj_val += rs[k]/self.var_z * np.linalg.norm(self.zs[k] - new_x)**2
             obj_val_history.append(obj_val)
@@ -67,7 +68,7 @@ class Tracker(object):
 
 
 def test_tracker():
-    tracker = Tracker(var_x=100000, var_z=.01, noise_density=1, noise_prob=.1)
+    tracker = Tracker(mean_x_prior=np.array([10,10]), var_x=100000, var_z=.01, noise_density=1, noise_prob=.1)
     pts = generate(100)
     tracker.set_observations(pts)
     curr_x, x_history, obj_val_history = tracker.run_em(init_x=np.array([0,0]))
