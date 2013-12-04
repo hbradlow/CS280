@@ -60,7 +60,7 @@ int main(int argc, const char **argv)
 }
 
 
-BOOST_PYTHON_MODULE(libmain_pi){
+BOOST_PYTHON_MODULE(libmain_py){
 	using namespace boost::python;
 	def("init_main_pi",init_main_pi);
 	def("process_frame",process_frame);

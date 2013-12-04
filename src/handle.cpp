@@ -15,14 +15,14 @@
 
 
 #if ARM
-    #define U(input,i,j,width) input[((int)(j / 2)) * width + ((int)(i / 2)) * 2]
-    #define V(input,i,j,width) input[((int)(j / 2)) * width + ((int)(i / 2)) * 2 + 1]
+    #define GETU(input,i,j,width) input[((int)(j / 2)) * width + ((int)(i / 2)) * 2]
+    #define GETV(input,i,j,width) input[((int)(j / 2)) * width + ((int)(i / 2)) * 2 + 1]
 
     #define set_image_value(input,i,j,channel,width,value) input[j * width + i] = value
     #define get_image_value(input,i,j,channel,width) input[j * width + i]
 #else
-    #define U(input,i,j,width) input.at<cv::Vec3b>(j,i)[1]
-    #define V(input,i,j,width) input.at<cv::Vec3b>(j,i)[2]
+    #define GETU(input,i,j,width) input.at<cv::Vec3b>(j,i)[1]
+    #define GETV(input,i,j,width) input.at<cv::Vec3b>(j,i)[2]
 
     #define set_image_value(input,i,j,channel,width,value) input.at<cv::Vec3b>(j,i)[channel] = value
     #define get_image_value(input,i,j,channel,width) input.at<cv::Vec3b>(j,i)[channel]
@@ -84,8 +84,8 @@ Component threshold_frame(Mat frame){
         for(i = 0; i<cols; i++){
             //extract the u and v components of a pixel
 #if ARM
-            int u = U(frame,i,j,cols);
-            int v = V(frame,i,j,cols);
+            int u = GETU(frame,i,j,cols);
+            int v = GETV(frame,i,j,cols);
             //calculate the inverse of the sum of the channels
             int sum = 255 - (u + v)/2;
 #elif PI
@@ -95,8 +95,8 @@ Component threshold_frame(Mat frame){
             int intensity = (r+g+b)/3;
             int sum = max(((r+g)/2-intensity),0);
 #else
-            int u = U(frame,i,j,cols);
-            int v = V(frame,i,j,cols);
+            int u = GETU(frame,i,j,cols);
+            int v = GETV(frame,i,j,cols);
             //calculate the inverse of the sum of the channels
             int sum = 255 - (u + v)/2;
 #endif
