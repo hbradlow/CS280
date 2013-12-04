@@ -16,9 +16,15 @@ class Tracker:
         self.mean = means[-1]
         self.cov = c[-1]
 
+        self.fail_counter = 0
+        self.fail_threshold = 20
+
     def register_reading(self,x,y,area):
         if x == -1:
             x = ma.masked
+            self.fail_counter += 1
+        else:
+            self.fail_counter = 0
         self.mean,self.cov = self.kf.filter_update(self.mean,self.cov,[x,y,area])
 
     def update(self):
@@ -40,7 +46,11 @@ class Tracker:
 
     def send_update(self):
         print self
-        mpstate.master().track(self.x(),self.y(),self.area())
+        if self.fail_counter > self.fail_threshold:
+            #all middle values
+            mpstate.master().track(127,127,127)
+        else:
+            mpstate.master().track(self.x(),self.y(),self.area())
 
 def init(_mpstate):
     global mpstate
