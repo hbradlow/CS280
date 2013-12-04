@@ -1,7 +1,7 @@
 #ifndef _HANDLE
 #define _HANDLE
 #define ARM 0
-#define PI 0
+#define PI 1
 #define DEBUG 0
 
 #if ARM
@@ -14,7 +14,7 @@
 #endif
 
 
-#if ARM
+#if ARM | PI
     #define GETU(input,i,j,width) input[((int)(j / 2)) * width + ((int)(i / 2)) * 2]
     #define GETV(input,i,j,width) input[((int)(j / 2)) * width + ((int)(i / 2)) * 2 + 1]
 

@@ -20,27 +20,25 @@ int num_levels = 1;
 Component found;
 GfxTexture texture;
 
-void init_main_pi(){
+void start(){
 	printf("Starting\n");
 	cam = StartCamera(WIDTH, HEIGHT,30,num_levels,do_argb_conversion);
-
 }
 float process_frame(){
-	time_t start = time(NULL);
 	cam->ReadFrame(0,tmpbuff,sizeof(tmpbuff));
 
 	found = threshold_frame(tmpbuff,HEIGHT,WIDTH);
 
 	return found.y;
 }
-void stop_main_pi(){
+void stop(){
 	StopCamera();
 }
 
 //entry point
 int main(int argc, const char **argv)
 {
-	init_main_pi();
+	start();
 	InitGraphics();
 	texture.Create(WIDTH,HEIGHT);
 	printf("Running frame loop\n");
@@ -56,13 +54,13 @@ int main(int argc, const char **argv)
 		DrawTextureRect(&texture,-aspect_ratio/screen_aspect_ratio,-1.0f,aspect_ratio/screen_aspect_ratio,1.0f);
 		EndFrame();
 	}
-	stop_main_pi();
+	stop();
 }
 
 
 BOOST_PYTHON_MODULE(libmain_py){
 	using namespace boost::python;
-	def("init_main_pi",init_main_pi);
+	def("start",start);
 	def("process_frame",process_frame);
-	def("stop_main_pi",stop_main_pi);
+	def("stop",stop);
 }
