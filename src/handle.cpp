@@ -28,6 +28,12 @@
     #define get_image_value(input,i,j,channel,width) input.at<cv::Vec3b>(j,i)[channel]
 #endif
 
+#if ARM | PI
+	#define MAX_SUM_THRESHOLD 15
+#else
+	#define MAX_SUM_THRESHOLD 155
+#endif
+
 
 float prev_max = 0;
 float prev_min = 255;
@@ -197,7 +203,7 @@ Component threshold_frame(Mat frame){
     cout << "Max component size " << max_size << endl;
 #endif
     struct Component found_component;
-	if(max_size>0 && max_sum>155){
+	if(max_size>0 && max_sum>MAX_SUM_THRESHOLD){
         prev_x = found_component.x = moment_x[max_component]/(float)max_size;
         prev_y = found_component.y = moment_y[max_component]/(float)max_size;
 	}

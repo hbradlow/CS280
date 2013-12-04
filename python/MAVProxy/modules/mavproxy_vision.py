@@ -19,6 +19,7 @@ class Tracker:
 	self.mean,self.cov = self.kf.filter_update(self.mean,self.cov,[x,y,area])
     def update(self):
 	x = vision.process_frame()
+	print "X: ",x
 	self.register_reading(x,0,0)
         self.send_update()
     def x(self):
