@@ -19,7 +19,7 @@ void start(){
     stream.set(CV_CAP_PROP_FRAME_WIDTH,320);
     stream.set(CV_CAP_PROP_FRAME_HEIGHT,240);
 }
-void process_frame(){
+int process_frame(){
     Mat frame;
     //extract a frame
     stream.read(frame);
@@ -28,10 +28,8 @@ void process_frame(){
 
     found = threshold_frame(frame);
     current_frame = found.image;
-    if(found.area>40)
-        cout << found.x << " " << found.y << " " << found.area << endl;
-    else
-        cout << -1 << " " << -1 << " " << -1 << endl;
+
+    return found.x;
 }
 void stop(){
 }
@@ -43,6 +41,12 @@ int main(){
 
     while(1){
         process_frame();
+
+        if(found.area>40)
+            cout << found.x << " " << found.y << " " << found.area << endl;
+        else
+            cout << -1 << " " << -1 << " " << -1 << endl;
+
         //display the frame
         imshow("Output",current_frame);
 
