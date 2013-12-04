@@ -1,6 +1,7 @@
 #ifndef _HANDLE
 #define _HANDLE
 #define ARM 0
+#define PI 0
 #define DEBUG 0
 
 #if ARM
@@ -39,7 +40,11 @@ struct Component
     float x;
     float y;
     float area;
-#if !ARM
+#if ARM
+	char* image;
+#elif PI
+	char* image;
+#else
     Mat image;
 #endif
 };
@@ -47,6 +52,9 @@ struct Component
 #if ARM
 struct Component threshold_frame(char* frame,int rows, int cols){
     char *components = frame;
+#elif PI
+struct Component threshold_frame(char* frame,int rows, int cols){
+    char components[rows*cols*4];
 #else
 Component threshold_frame(Mat frame){
     int rows = frame.rows;
@@ -75,11 +83,24 @@ Component threshold_frame(Mat frame){
     for(j = 0; j<rows; j++){
         for(i = 0; i<cols; i++){
             //extract the u and v components of a pixel
+#if ARM
             int u = U(frame,i,j,cols);
             int v = V(frame,i,j,cols);
-
             //calculate the inverse of the sum of the channels
             int sum = 255 - (u + v)/2;
+#elif PI
+            int r = frame[4*(j*cols+i)];
+            int g = frame[4*(j*cols+i)+1];
+            int b = frame[4*(j*cols+i)+2];
+            int intensity = (r+g+b)/3;
+            int sum = max(((r+g)/2-intensity),0);
+#else
+            int u = U(frame,i,j,cols);
+            int v = V(frame,i,j,cols);
+            //calculate the inverse of the sum of the channels
+            int sum = 255 - (u + v)/2;
+#endif
+
             //keep track of the min/max
             if(sum>max_sum)
                 max_sum = sum;
@@ -133,7 +154,6 @@ Component threshold_frame(Mat frame){
             }
         }
     }
-    cout << "max sum " << max_sum << endl;
 #if DEBUG
     //count the number of components
     int num = 0;
@@ -142,7 +162,8 @@ Component threshold_frame(Mat frame){
             num++;
         }
     }
-    cout << "Num components " << num << endl;
+    cout << "Num components: " << num << endl;
+    cout << "Max sum: " << max_sum << endl;
 #endif
 
     //merge components
