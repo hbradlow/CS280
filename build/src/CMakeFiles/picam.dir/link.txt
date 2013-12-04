@@ -1,2 +1,0 @@
-/usr/bin/ar cr libpicam.a  CMakeFiles/picam.dir/picam/picam.cpp.o CMakeFiles/picam.dir/picam/camera.cpp.o CMakeFiles/picam.dir/picam/cameracontrol.cpp.o CMakeFiles/picam.dir/picam/graphics.cpp.o
-/usr/bin/ranlib libpicam.a

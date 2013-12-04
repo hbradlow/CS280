@@ -1,7 +1,7 @@
 #ifndef _HANDLE
 #define _HANDLE
 #define ARM 0
-#define PI 1
+#define PI 0
 #define DEBUG 0
 
 #if ARM
@@ -88,7 +88,6 @@ Component threshold_frame(Mat frame){
     int max_components = 200; //maximum number of connected components to find
     int equivalent[max_components]; //data structure to handle merging connected components
     int size[max_components]; //count the size of each components
-    float scaled_size[max_components]; //count the size of each components
     int moment_x[max_components]; //calculate the moment x of each component
     int moment_y[max_components]; //calculate the moment y of each component
     int id = 1; //increasing id to assign to new components
@@ -96,7 +95,6 @@ Component threshold_frame(Mat frame){
     for(i = 0; i<max_components; i++){
         equivalent[i] = i; //equivalent starts out with each cell pointing to itself
         size[i] = 0; //sizes all start at 0
-        scaled_size[i] = 0; //sizes all start at 0
         moment_x[i] = 0; //moments start at 0
         moment_y[i] = 0; //moments start at 0
     }
@@ -193,7 +191,6 @@ Component threshold_frame(Mat frame){
 
     //merge components
     int max_size = 0;
-    int max_scaled_size = 0;
     int max_component = -1;
     for(j = 0; j<rows; j++){
         for(i = 0; i<cols; i++){
@@ -211,12 +208,10 @@ Component threshold_frame(Mat frame){
             set_image_value(components,i,j,0,cols,current);
 #endif
             size[current] += 1; //keep track of the size of the component
-            //scaled_size[current] += 1/(1+(i-prev_x)*(i-prev_x) + (j-prev_y)*(j-prev_y)); //keep track of the size of the component
             moment_x[current] += j;
             moment_y[current] += i;
             if(current != 0 && size[current] > max_size){
                 max_size = size[current];
-                //max_scaled_size = scaled_size[current];
                 max_component = current;
             }
         }

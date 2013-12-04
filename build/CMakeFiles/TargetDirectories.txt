@@ -1,3 +1,0 @@
-/home/pi/Desktop/Work/cs280/build/src/CMakeFiles/main.dir
-/home/pi/Desktop/Work/cs280/build/src/CMakeFiles/main_pi.dir
-/home/pi/Desktop/Work/cs280/build/src/CMakeFiles/picam.dir
