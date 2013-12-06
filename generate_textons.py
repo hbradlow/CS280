@@ -47,7 +47,8 @@ def generate_textons(input_video, W=640, H=480, margin=.2, viz=False, output=Non
     # display the clusters
     if viz:
       import matplotlib.pyplot as plt
-      preview = centers.reshape((centers.shape[0],config.TEXTON_SIZE,config.TEXTON_SIZE))
+      preview = centers.reshape((centers.shape[0],
+                            config.TEXTON_SIZE,config.TEXTON_SIZE))
       for t in preview:
         x = t - t.min()
         x /= x.max()
