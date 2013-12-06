@@ -1,12 +1,14 @@
 import cv2
 import cPickle
 import config
-
 import numpy as np
 from sklearn.feature_extraction import image as skimage
 from sklearn.cluster import KMeans
 
+from utils import normalize_patches
+
 def generate_textons(input_video, W=640, H=480, margin=.2, viz=False, output=None, debug=False):
+    """Generate a texton dictionary for a given input video."""
     IMAGE_SIZE = (W,H)
 
     capture = cv2.VideoCapture(input_video)
@@ -22,14 +24,11 @@ def generate_textons(input_video, W=640, H=480, margin=.2, viz=False, output=Non
         image = cv2.resize(image,IMAGE_SIZE).astype(float)/255.
         image = image[W*margin:W*(1-margin),H*margin:H*(1-margin)]
 
-        # extract patches from the frame and vectorize
+        # extract patches from the frame and vectorize and normalize
         patches = skimage.extract_patches_2d(image, 
                                     (config.TEXTON_SIZE,config.TEXTON_SIZE))
         patches = patches.reshape((-1,config.TEXTON_SIZE*config.TEXTON_SIZE))
-
-        # normalize the patches (subract mean and divide by l1 norm)
-        patches -= np.mean(patches,axis=1)[:,None]
-        patches /= abs(patches).sum(axis=1)[:,None]+.001
+        patches = normalize_patches(patches)
 
         textons.append(patches)
 

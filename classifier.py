@@ -6,6 +6,7 @@ def Classifier:
 
     def __init__(self,input_video,debug=False):
         """Train the classifier on the training data using a texton dictionary"""
+
         self.debug=debug
 
         # generate the texton dictionary
