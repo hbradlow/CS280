@@ -4,6 +4,8 @@ import IPython
 import numpy as np
 import scipy.ndimage
 import cPickle
+import collections
+import config
 
 import argparse
 parser = argparse.ArgumentParser()
@@ -12,30 +14,36 @@ parser.add_argument('output')
 args = parser.parse_args()
 
 FRAME_SKIP = 10
-WINDOW_SIZE = 500
+WINDOW_SIZE = 800
 
 curr_frame_num = 0
-box_starts = {}
-box_ends = {}
+data = collections.defaultdict(dict)
 def on_mouse(event, x, y, flags, params):
-    window_size = (params[1], params[0])
-    pos = (float(x)/window_size[0], float(y)/window_size[1])
+    image = params
+    #window_size = (image.shape[1], image.shape[0])
+    #pos = (float(x)/window_size[0], float(y)/window_size[1])
+    pos = (x, y)
     if event == cv.CV_EVENT_LBUTTONDOWN:
-        box_starts[curr_frame_num] = pos
+        data[curr_frame_num]['start'] = pos
+        print pos
     elif event == cv.CV_EVENT_LBUTTONUP:
-        box_ends[curr_frame_num] = pos
+        data[curr_frame_num]['end'] = pos
+        print pos
+        data[curr_frame_num]['full_img'] = image
+        start, end = data[curr_frame_num]['start'], pos
+        data[curr_frame_num]['box_img'] = image[start[1]:end[1], start[0]:end[0]]
 
 capture = cv2.VideoCapture(args.input_video)
 while True:
     print 'Frame:', curr_frame_num
     retval, image = capture.read()
-    image = cv2.cvtColor(image,cv2.cv.CV_RGB2GRAY)
+    #image = cv2.cvtColor(orig_image, cv2.cv.CV_RGB2GRAY)
 
     zoom_factor = WINDOW_SIZE / float(max(image.shape[:2]))
-    image = scipy.ndimage.interpolation.zoom(image, zoom_factor)
+    image = scipy.ndimage.interpolation.zoom(image, (zoom_factor, zoom_factor, 1))
 
     cv2.namedWindow('frame')
-    cv.SetMouseCallback('frame', on_mouse, image.shape)
+    cv.SetMouseCallback('frame', on_mouse, image)
     cv2.imshow('frame', image)
 
     key = cv2.waitKey(0)
@@ -48,13 +56,34 @@ while True:
       capture.read()
       curr_frame_num += 1
 
+# now make a training set
+import sklearn
+import sklearn.feature_extraction
+all_patches = []
+POS_LABEL = 1
+NEG_LABEL = -1
+for k in data:
+  positive_patches = sklearn.feature_extraction.image.extract_patches_2d(data[k]['box_img'], (config.PATCH_SIZE, config.PATCH_SIZE))
+  for p in positive_patches:
+    if not p: continue
+    all_patches.append((p, POS_LABEL))
+
+  full_img = data[k]['full_img']
+  start, end = data[k]['start'], data[k]['end']
+  for i in range(config.NUM_NEGATIVE_PATCHES):
+    while True:
+      a = np.random.randint(0, full_img.shape[0]-config.PATCH_SIZE)
+      b = np.random.randint(0, full_img.shape[1]-config.PATCH_SIZE)
+      if a > end[0] or b > end[1] or a+config.PATCH_SIZE < start[0] or b+config.PATCH_SIZE < start[1]:
+        p = image[b:b+config.PATCH_SIZE,a:a+config.PATCH_SIZE]
+        if p:
+          all_patches.append((p, NEG_LABEL))
+          break
+
+data['all_patches'] = all_patches
+
 # write output
-print box_starts
-print box_ends
-
-boxes = {}
-for i in box_starts:
-  boxes[i] = box_starts[i] + box_ends[i]
-
+print 'got %d frames' % len(data)
 with open(args.output, 'w') as f:
-  cPickle.dump(boxes, f)
+  cPickle.dump(data, f)
+

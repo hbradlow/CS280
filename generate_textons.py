@@ -16,7 +16,6 @@ parser.add_argument('output')
 parser.add_argument('--viz', default=False)
 args = parser.parse_args()
 
-config.TEXTON_SIZE = 5
 W = 640
 H = 480
 IMAGE_SIZE = (W,H)
