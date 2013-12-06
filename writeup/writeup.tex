@@ -1,0 +1,81 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{bm}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+
+\newcommand{\bphi}{{\bm \phi}}
+\newcommand{\bA}{\mathbf{A}}
+\newcommand{\bI}{\mathbf{I}}
+\newcommand{\bu}{\mathbf{u}}
+\newcommand{\bx}{\mathbf{x}}
+\newcommand{\by}{\mathbf{y}}
+\newcommand{\bz}{\mathbf{z}}
+\newcommand{\bb}{\mathbf{b}}
+\newcommand{\bc}{\mathbf{c}}
+\newcommand{\bLambda}{{\bm \Lambda}}
+\newcommand{\bSigma}{{\bm \Sigma}}
+\newcommand{\cN}{\mathcal{N}}
+\newcommand{\E}[1]{\mathbb{E}\left[#1\right]}
+
+\begin{document}
+
+
+\section{Dynamics model}
+The dynamics model is an autoregressive model of order $p$:
+\[
+\bx_t = \bb + \sum_{k=1}^p \bA_{p+1-k} \bx_{t-k} + \epsilon
+\]
+where $\epsilon$ is zero-mean Gaussian noise with isotropic covariance $\bSigma_x = \sigma_x^2\bI$.
+Maximum likelihood estimation for this model given training data consisting of length-$p+1$ windows of data is a matter of solving the linear least squares problem
+\[
+\min_{\bA_{1:p}, \bb} \sum_{i=1}^N \left\| \bx_{p+1}^{(i)} - \bb - \sum_{k=1}^p\bA_k\bx_k^{(i)} \right\|^2
+\]
+and then setting $\sigma^2$ to $1/N$ times the minimal value of this objective.
+
+\section{Observation model}
+The observation model is a two-component mixture, consisting of a Gaussian distribution centered at the state and a uniform distribution to account for outliers.
+
+Let $\{\bz_i\}_{i=1}^N$ be the observed (filtered) points on the screen. Each $\bz_i$ has an associated latent indicator variable $y_i$ that signifies which mixture component it belongs to:
+\[
+y_i = 1[\bx_i \mbox{ is not noise}]
+\]
+The prior probability of these variables is
+\[
+p(y_i = 1) = \pi
+\]
+
+If $\bz_i$ is not noise, it is normally distributed around the true position $\bx$ with covariance $\bSigma_z = \sigma_z^2\bI$. Otherwise, it is uniformly distributed throughout the screen with density $\rho$:
+\begin{align*}
+p(\bz_i | \bx, y_i=1) &= \cN(\bx, \bSigma_z) \\
+p(\bz_i | \bx, y_i=0) &= \rho
+\end{align*}
+
+\section{Inference}
+
+EM algorithm for MAP estimation
+
+Complete-data likelihood
+\begin{align*}
+p(\bz_{1:N}, y_{1:N} | \bx)p(\bx) &= p(\bx) \prod_i p(\bz_i, y_i | \bx) \\
+p(\bz_i, y_i | \bx) & = \left(\pi \cN(\bz_i; \bx, \bSigma_z)\right)^{y_i} \left( (1-\pi) \rho \right)^{1-y_i}
+\end{align*}
+
+Each iteration of the EM algorithm proceeds by maximizing the expected complete-data log likelihood with the latent variables drawn from their conditional distribution given the observations and settings of the parameters from the previous iteration.
+\begin{align*}
+Q(\bx, \bx^{(k-1)}) &= \E{\log p(\bz_{1:N}, y_{1:N} | \bx)p(\bx)} \\
+ &= \log p(\bx) + \sum_i \E{\log p(\bz_i, y_i | \bx)} \\
+ &= \log p(\bx) + \sum_i r_i \log \cN(\bz_i; \bx, \bSigma_z) + \mbox{const} \\
+ \intertext{where}
+ r_i &= \frac{\cN(\bz_i; \bx^{(k-1)}, \bSigma_z) \pi}{\cN(\bz_i; \bx^{(k-1)}, \bSigma_z)\pi + \rho(1-\pi)}
+\end{align*}
+In the E-step, we compute these $r_i$ values, and in the M-step, we compute $\bx^{(k)}$ by maximizing $Q(\bx, \bx^{(k-1)})$:
+\begin{align*}
+\bx^{(k)} &\leftarrow \arg \max_\bx Q(\bx, \bx^{(k-1)}) \\
+ &= \arg\min_\bx \ (\bx-\bx_0)^T\bSigma_x^{-1}(\bx-\bx_0) + \sum_i r_i(\bz_i-\bx)^T\bSigma_z^{-1}(\bz_i-\bx) \\
+ &= \left(\bSigma_x^{-1} + \bSigma_z^{-1}\sum_i r_i \right)^{-1} \left(\bSigma_x^{-1}\bx_0 + \bSigma_z^{-1}\sum_i r_i\bz_i \right) \\
+ &= \frac{\sigma_z^2\bx_0 + \sigma_x^2\sum_i r_i\bz_i}{\sigma_z^2 + \sigma_x^2\sum_i r_i}
+\end{align*}
+
+
+\end{document}
