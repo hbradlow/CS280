@@ -4,3 +4,5 @@ data
 build
 .DS_Store
 *.pyc
+*.MOV
+*.pkl
