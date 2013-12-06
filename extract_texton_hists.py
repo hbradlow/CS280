@@ -35,5 +35,3 @@ def compute_texton_hist(textons, patch):
   hist /= hist.sum()
 
   return hist
-
-
