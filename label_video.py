@@ -24,13 +24,17 @@ def on_mouse(event, x, y, flags, params):
     #pos = (float(x)/window_size[0], float(y)/window_size[1])
     pos = (x, y)
     if event == cv.CV_EVENT_LBUTTONDOWN:
+        print pos
         data[curr_frame_num]['start'] = pos
-        print pos
     elif event == cv.CV_EVENT_LBUTTONUP:
-        data[curr_frame_num]['end'] = pos
         print pos
-        data[curr_frame_num]['full_img'] = image
         start, end = data[curr_frame_num]['start'], pos
+        if end[0] - start[0] < 10:
+          end[0] = 10
+        if end[1] - start[1] < 10:
+          end[1] = 10
+        data[curr_frame_num]['end'] = end
+        data[curr_frame_num]['full_img'] = image
         data[curr_frame_num]['box_img'] = image[start[1]:end[1], start[0]:end[0]]
 
 capture = cv2.VideoCapture(args.input_video)
@@ -65,7 +69,7 @@ NEG_LABEL = -1
 for k in data:
   positive_patches = sklearn.feature_extraction.image.extract_patches_2d(data[k]['box_img'], (config.PATCH_SIZE, config.PATCH_SIZE))
   for p in positive_patches:
-    if not p: continue
+    if p == []: continue
     all_patches.append((p, POS_LABEL))
 
   full_img = data[k]['full_img']
@@ -76,7 +80,7 @@ for k in data:
       b = np.random.randint(0, full_img.shape[1]-config.PATCH_SIZE)
       if a > end[0] or b > end[1] or a+config.PATCH_SIZE < start[0] or b+config.PATCH_SIZE < start[1]:
         p = image[b:b+config.PATCH_SIZE,a:a+config.PATCH_SIZE]
-        if p:
+        if p != []:
           all_patches.append((p, NEG_LABEL))
           break
 

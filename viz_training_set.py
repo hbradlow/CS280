@@ -12,7 +12,8 @@ random.shuffle(patches)
 last = 0
 for patch, label in patches:
   if label == last: continue
-  print patch
+  if patch.size == 0: continue
+  print patch, patch.shape
   plt.imshow(patch)
   print label
   plt.show()
