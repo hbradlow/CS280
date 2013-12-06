@@ -2,10 +2,18 @@ import cv2
 import cv
 import IPython
 import time
+import cPickle
 
 import numpy as np
 from sklearn.feature_extraction import image as skimage
 from sklearn.cluster import KMeans
+
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument('input_video')
+parser.add_argument('output')
+parser.add_argument('--viz', default=False)
+args = parser.parse_args()
 
 PATCH_SIZE = 5
 W = 640
@@ -13,7 +21,7 @@ H = 480
 IMAGE_SIZE = (W,H)
 margin = .2
 
-capture = cv2.VideoCapture("/Users/jonathan/Desktop/textons.MOV")
+capture = cv2.VideoCapture(args.input_video)
 
 textons = []
 
@@ -23,7 +31,6 @@ counter = 0
 for i in range(1):
     retval,image = capture.read()
     image = cv2.cvtColor(image,cv2.cv.CV_RGB2GRAY)
-    IPython.embed()
     image = cv2.resize(image,IMAGE_SIZE).astype(float)/255.
     image = image[W*margin:W*(1-margin),H*margin:H*(1-margin)]
     patches = skimage.extract_patches_2d(image, (PATCH_SIZE,PATCH_SIZE))
@@ -44,7 +51,16 @@ km = KMeans(25,verbose=1,max_iter=20,n_init=1)
 print "Clustering..."
 km.fit(textons)
 centers = km.cluster_centers_
-IPython.embed()
-preview = centers.reshape((centers.shape[0],PATCH_SIZE,PATCH_SIZE))
-cv2.namedWindow("test")
-IPython.embed()
+
+if args.viz:
+  import matplotlib.pyplot as plt
+  preview = centers.reshape((centers.shape[0],PATCH_SIZE,PATCH_SIZE))
+  for t in preview:
+    x = t - t.min()
+    x /= x.max()
+    print x, x.shape
+    plt.imshow(x, 'Greys_r')
+    plt.show()
+
+with open(args.output, 'w') as f:
+  cPickle.dump(centers, f)
