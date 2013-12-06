@@ -3,6 +3,7 @@ import cv
 import IPython
 import time
 import cPickle
+import config
 
 import numpy as np
 from sklearn.feature_extraction import image as skimage
@@ -15,7 +16,7 @@ parser.add_argument('output')
 parser.add_argument('--viz', default=False)
 args = parser.parse_args()
 
-PATCH_SIZE = 5
+config.TEXTON_SIZE = 5
 W = 640
 H = 480
 IMAGE_SIZE = (W,H)
@@ -33,8 +34,8 @@ for i in range(1):
     image = cv2.cvtColor(image,cv2.cv.CV_RGB2GRAY)
     image = cv2.resize(image,IMAGE_SIZE).astype(float)/255.
     image = image[W*margin:W*(1-margin),H*margin:H*(1-margin)]
-    patches = skimage.extract_patches_2d(image, (PATCH_SIZE,PATCH_SIZE))
-    patches = patches.reshape((-1,PATCH_SIZE*PATCH_SIZE))
+    patches = skimage.extract_patches_2d(image, (config.TEXTON_SIZE,config.TEXTON_SIZE))
+    patches = patches.reshape((-1,config.TEXTON_SIZE*config.TEXTON_SIZE))
 
     #normalize
     patches -= np.mean(patches,axis=1)[:,None]
@@ -54,7 +55,7 @@ centers = km.cluster_centers_
 
 if args.viz:
   import matplotlib.pyplot as plt
-  preview = centers.reshape((centers.shape[0],PATCH_SIZE,PATCH_SIZE))
+  preview = centers.reshape((centers.shape[0],config.TEXTON_SIZE,config.TEXTON_SIZE))
   for t in preview:
     x = t - t.min()
     x /= x.max()
