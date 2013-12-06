@@ -13,9 +13,7 @@ H = 480
 IMAGE_SIZE = (W,H)
 margin = .2
 
-capture = cv2.VideoCapture("textons.MOV")
-
-
+capture = cv2.VideoCapture("/Users/jonathan/Desktop/textons.MOV")
 
 textons = []
 
@@ -25,6 +23,7 @@ counter = 0
 for i in range(1):
     retval,image = capture.read()
     image = cv2.cvtColor(image,cv2.cv.CV_RGB2GRAY)
+    IPython.embed()
     image = cv2.resize(image,IMAGE_SIZE).astype(float)/255.
     image = image[W*margin:W*(1-margin),H*margin:H*(1-margin)]
     patches = skimage.extract_patches_2d(image, (PATCH_SIZE,PATCH_SIZE))
