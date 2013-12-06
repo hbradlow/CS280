@@ -6,3 +6,6 @@ build
 *.pyc
 *.MOV
 *.pkl
+*.pdf
+*.log
+*.aux
