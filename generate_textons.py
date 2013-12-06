@@ -1,7 +1,4 @@
 import cv2
-import cv
-import IPython
-import time
 import cPickle
 import config
 
@@ -9,14 +6,9 @@ import numpy as np
 from sklearn.feature_extraction import image as skimage
 from sklearn.cluster import KMeans
 
-
-def generate_textons(args):
-    W = 640
-    H = 480
+def generate_textons(input_video, W=640, H=480, margin=.2, viz=False, output=None):
     IMAGE_SIZE = (W,H)
-    margin = .2
-
-    capture = cv2.VideoCapture(args.input_video)
+    capture = cv2.VideoCapture(input_video)
 
     textons = []
 
@@ -47,7 +39,7 @@ def generate_textons(args):
     km.fit(textons)
     centers = km.cluster_centers_
 
-    if args.viz:
+    if viz:
       import matplotlib.pyplot as plt
       preview = centers.reshape((centers.shape[0],config.TEXTON_SIZE,config.TEXTON_SIZE))
       for t in preview:
@@ -57,7 +49,8 @@ def generate_textons(args):
         plt.imshow(x, 'Greys_r')
         plt.show()
 
-    with open(args.output, 'w') as f:
-      cPickle.dump(centers, f)
+    if output:
+        with open(output, 'w') as f:
+          cPickle.dump(centers, f)
 
     return centers

@@ -9,16 +9,20 @@ parser.add_argument('output')
 parser.add_argument('--viz', default=False)
 args = parser.parse_args()
 
-textons = generate_textons(args)
-fe = FeatureExtractor(textons)
+def Classifier:
+    def __init__(self):
+        self.textons = generate_textons(args,viz=args.viz,output=args.output)
+        self.fe = FeatureExtractor(textons)
 
-feature_vectors = []
-labels = []
+        feature_vectors = []
+        labels = []
 
-for patch,label in get_patches(args.input_video):
-    feature_vector = get_feature_vector(textons,patch)
-    labels.append(label)
-    feature_vectors.append(feature_vector)
+        for patch,label in get_patches(args.input_video):
+            feature_vector = get_feature_vector(patch)
+            labels.append(label)
+            feature_vectors.append(feature_vector)
 
-classifier = svm.SVC()
-classifier.fit(feature_vectors,labels)
+        self.classifier = svm.SVC()
+        self.classifier.fit(feature_vectors,labels)
+    def predict(self,patch):
+        return self.classifier.predict(patch)

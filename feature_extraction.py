@@ -4,7 +4,7 @@ class FeatureExtractor:
     def __init__(self,textons,bins=3):
         self.textons = textons
         self.bins = 3
-    def get_feature_vector(patch):
+    def get_feature_vector(self,patch):
         gray_patch = np.mean(patch,axis=2)
         linear_patch = patch.reshape((-1,3))
 
