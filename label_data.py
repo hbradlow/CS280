@@ -36,3 +36,6 @@ while disp.isNotDone():
         img = cam.getImage()
         img = img.scale(w,h)
         img.show()
+
+def get_patches(input_video):
+    return [None,1]
