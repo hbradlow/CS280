@@ -15,9 +15,15 @@ class Tracker:
         means,c = self.kf.filter([self.mean,self.mean])
         self.mean = means[-1]
         self.cov = c[-1]
+	self.mode = 0
 
         self.fail_counter = 0
         self.fail_threshold = 20
+
+    def set_mode(self,m):
+	if m != self.mode:
+	    vision.log_string("MODE: " + str(m) + "\n")
+	self.mode = m
 
     def register_reading(self,x,y,area):
         if x == -1:
@@ -46,6 +52,7 @@ class Tracker:
 
     def send_update(self):
         print self
+	vision.log_string("SENDING VALUE: " + str(self.x()) + "\n")
         if self.fail_counter > self.fail_threshold:
             #all middle values
             mpstate.master().track(127,127,127)
@@ -69,7 +76,8 @@ def vision_loop():
         mpstate.tracker.update()
 
 def mavlink_packet(m):
-    pass
+    if m.get_type() == "HEARTBEAT":
+	mpstate.tracker.set_mode(m.custom_mode)
 
 def name():
     '''return module name'''

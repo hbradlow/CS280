@@ -6,3 +6,4 @@ build
 *.so
 *.py[co]
 *.tlog*
+logs
