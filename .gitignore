@@ -7,3 +7,5 @@ build
 *.py[co]
 *.tlog*
 logs
+*.tlog*
+*.MOV
