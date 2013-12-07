@@ -8,3 +8,4 @@ parser.add_argument('--viz', default=False)
 args = parser.parse_args()
 
 classifier = Classifier(args.input_video,debug=True)
+
