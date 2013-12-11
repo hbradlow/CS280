@@ -2,7 +2,12 @@ import numpy as np
 import cPickle
 import matplotlib.pyplot as plt
 
-with open('out.pkl', 'r') as f:
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument('input')
+args = parser.parse_args()
+
+with open(args.input, 'r') as f:
   data = cPickle.load(f)
 
 patches = data['all_patches']

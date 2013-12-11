@@ -69,7 +69,6 @@ NEG_LABEL = -1
 for k in data:
   positive_patches = sklearn.feature_extraction.image.extract_patches_2d(data[k]['box_img'], (config.PATCH_SIZE, config.PATCH_SIZE))
   for p in positive_patches:
-    if p == []: continue
     all_patches.append((p, POS_LABEL))
 
   full_img = data[k]['full_img']
@@ -79,8 +78,8 @@ for k in data:
       a = np.random.randint(0, full_img.shape[0]-config.PATCH_SIZE)
       b = np.random.randint(0, full_img.shape[1]-config.PATCH_SIZE)
       if a > end[0] or b > end[1] or a+config.PATCH_SIZE < start[0] or b+config.PATCH_SIZE < start[1]:
-        p = image[b:b+config.PATCH_SIZE,a:a+config.PATCH_SIZE]
-        if p != []:
+        if b+config.PATCH_SIZE < image.shape[0] and a+config.PATCH_SIZE < image.shape[1]:
+          p = image[b:b+config.PATCH_SIZE,a:a+config.PATCH_SIZE]
           all_patches.append((p, NEG_LABEL))
           break
 

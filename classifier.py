@@ -1,11 +1,10 @@
 from generate_textons import generate_textons
 from feature_extraction import FeatureExtractor
-from label_data import get_patches
 from sklearn import svm
 
 class Classifier:
 
-    def __init__(self,input_video,debug=False):
+    def __init__(self,input_video,training_data_patches,debug=False):
         """Train the classifier on the training data using a texton dictionary"""
 
         self.debug=debug
@@ -14,11 +13,11 @@ class Classifier:
         self.textons = generate_textons(input_video,debug=self.debug)
 
         # extract the feature vectors from the training video
-        self.fe = FeatureExtractor(textons)
+        self.fe = FeatureExtractor(self.textons)
         feature_vectors = []
         labels = []
-        for patch,label in get_patches(input_video):
-            feature_vector = get_feature_vector(patch)
+        for patch,label in training_data_patches:
+            feature_vector = self.fe.get_feature_vector(patch)
             labels.append(label)
             feature_vectors.append(feature_vector)
 

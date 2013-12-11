@@ -13,15 +13,15 @@ def compute_texton_hist(textons, patch):
 
     # extract small patches and normalize
     subpatches = extract_patches_2d(patch, 
-                    (config.TEXTON_SIZE, config.TEXTON_SIZE)).resize((-1, 
+                    (config.TEXTON_SIZE, config.TEXTON_SIZE)).reshape((-1, 
                     config.TEXTON_SIZE**2))
     subpatches = normalize_patches(subpatches)
 
     # finds the closest matching texton for each subpatch
     dists = ssd.cdist(subpatches, textons, 'euclidean')
-    best_textons = dists.amin(axis=1)
+    best_textons = dists.argmin(axis=1)
 
-    assert len(best_textons) == patches.shape[0]
+    assert len(best_textons) == subpatches.shape[0]
 
     # computes a histogram of the matching textons
     hist = np.bincount(best_textons, minlength=len(textons))
