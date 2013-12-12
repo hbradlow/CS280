@@ -10,6 +10,10 @@ class Classifier:
 
         self.debug=debug
 
+        import random
+        random.shuffle(training_data_patches)
+        training_data_patches = training_data_patches[:int(len(training_data_patches)*.1)]
+
         # generate the texton dictionary
         print 'Generating texton dictionary'
         self.textons = generate_textons(input_video,debug=self.debug)
