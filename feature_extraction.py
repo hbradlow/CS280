@@ -13,3 +13,4 @@ class FeatureExtractor:
         color_hist = np.histogramdd(linear_patch,bins=self.bins,range=((-.5,255.5),(-.5,255.5),(-.5,255.5)))[0].reshape(-1)
 
         return np.r_[texton_hist, color_hist]
+        #return color_hist

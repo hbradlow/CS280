@@ -7,6 +7,7 @@ import config
 import numpy as np
 import scipy.misc
 import utils
+import IPython
 
 parser = argparse.ArgumentParser()
 parser.add_argument('input_video')
@@ -20,10 +21,11 @@ with open(args.training_data, 'r') as f:
 training_data = cPickle.loads(input_str)
 
 classifier = Classifier(args.input_video, training_data['all_patches'], debug=True)
+IPython.embed()
 
 capture = cv2.VideoCapture(args.input_video)
 
-for i in range(1):
+for i in range(10):
     retval,image = capture.read()
 
     image = utils.canonicalize_image(image)
@@ -33,15 +35,15 @@ for i in range(1):
     # image = np.array(image)
     h,w = image.shape[0:2]
     
-    for i in range(h-config.PATCH_SIZE):
-        if i%10 == 0:
-            print i
-            for j in range(w-config.PATCH_SIZE):
-                patch = image[i:i+config.PATCH_SIZE,j:j+config.PATCH_SIZE,:]
-                #print patch.shape
-                if 1 in classifier.predict(patch):
-                    image_save[i,j,:] = [255,0,0]
+    for i in range(0,h-config.PATCH_SIZE,5):
+        print i
+        for j in range(0,w-config.PATCH_SIZE,5):
+            patch = image[i:i+config.PATCH_SIZE,j:j+config.PATCH_SIZE,:]
+            if 1 in classifier.predict(patch):
+                for i2 in range(i,i+10):
+                    for j2 in range(j,j+10):
+                        image_save[i2,j2,:] = [255,0,0]
 
     scipy.misc.imsave("output.jpg",image_save)
 
-    exit()
+    raw_input()

@@ -27,12 +27,13 @@ class Classifier:
         curr_num = 0
         for patch,label in training_data_patches:
             curr_num += 1
-            if curr_num % 1000 == 0:
-                print curr_num, '/', len(training_data_patches), ':', float(curr_num)/len(training_data_patches)
-            patches.append(patch)
-            feature_vector = self.fe.get_feature_vector(patch)
-            labels.append(label)
-            feature_vectors.append(feature_vector)
+            if curr_num%10 == 0:
+                if curr_num % 1000 == 0:
+                    print curr_num, '/', len(training_data_patches), ':', float(curr_num)/len(training_data_patches)
+                patches.append(patch)
+                feature_vector = self.fe.get_feature_vector(patch)
+                labels.append(label)
+                feature_vectors.append(feature_vector)
         visualize_patches(patches[0:30])
 
         X_train, X_test, y_train, y_test = cross_validation.train_test_split(feature_vectors, labels, test_size=.2, random_state=0)
