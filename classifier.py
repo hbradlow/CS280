@@ -1,8 +1,7 @@
 from generate_textons import generate_textons
 from feature_extraction import FeatureExtractor
 from visualize_patches import visualize_patches
-from sklearn import svm
-import IPython
+from sklearn import svm, cross_validation, grid_search
 
 class Classifier:
 
@@ -26,12 +25,19 @@ class Classifier:
             feature_vectors.append(feature_vector)
         visualize_patches(patches[0:30])
 
+        X_train, X_test, y_train, y_test = cross_validation.train_test_split(feature_vectors, labels, test_size=.2, random_state=0)
+
         # train the classifier on the training data
-        self.classifier = svm.SVC()
-        self.classifier.fit(feature_vectors,labels)
+        svc = svm.SVC()
+        params = {'kernel':('linear',), 'C':[1e-3]}
+        self.classifier = grid_search.GridSearchCV(svc, params)
+        self.classifier.fit(X_train, y_train)
+        print 'Best params:', self.classifier.best_params_
+
+        print 'Training data size:', len(X_train)
+        print 'Result on test set:', self.classifier.score(X_test, y_test)
 
     def predict(self,patch):
         """Predict the label of a patch using the trained classifier"""
 
-        print self.classifier.predict(self.fe.get_feature_vector(patch))
         return self.classifier.predict(self.fe.get_feature_vector(patch))

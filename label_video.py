@@ -73,7 +73,7 @@ for k in data:
 
   full_img = data[k]['full_img']
   start, end = data[k]['start'], data[k]['end']
-  for i in range(config.NUM_NEGATIVE_PATCHES):
+  for i in range(len(positive_patches)):
     while True:
       a = np.random.randint(0, full_img.shape[0]-config.PATCH_SIZE)
       b = np.random.randint(0, full_img.shape[1]-config.PATCH_SIZE)
