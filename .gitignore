@@ -1,4 +1,5 @@
 *.swp
+*~
 *.o
 data
 build
@@ -7,5 +8,6 @@ build
 *.py[co]
 *.tlog*
 logs
+logs_*
 *.tlog*
 *.MOV

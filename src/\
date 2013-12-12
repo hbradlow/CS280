@@ -55,64 +55,6 @@ struct Component
 #endif
 };
 
-Component threshold_simple(char* frame, int rows, int cols){
-    //char components[rows*cols*4];
-	int i,j;
-
-float area = 0;
-float moment_x;
-float moment_y;	
-
-    int max_sum = 0;
-    int min_sum = 255;
-
-    for(j = 0; j<rows; j++){
-        for(i = 0; i<cols; i++){
-	//set_image_value(components,i,j,0,cols,0);
-            int r = frame[4*(j*cols+i)];
-            int g = frame[4*(j*cols+i)+1];
-            int b = frame[4*(j*cols+i)+2];
-            int intensity = (r+g+b)/3;
-            int sum = max(((r+g)/2-intensity),0);
-
-            if(sum>max_sum)
-                max_sum = sum;
-            if(sum<min_sum)
-                min_sum = sum;
-            //scale the sum to fill the range (0-255)
-            if(prev_max-prev_min != 0)
-            {
-                sum = (sum-prev_min)*(255/(prev_max-prev_min));
-            }
-
-	    if(sum>175){
-			area += 1;
-			moment_x += j;
-			moment_y += i;
-                        //set_image_value(components,i,j,0,cols,255);
-		}	
-	}
-	}
-
-    prev_max = alpha*max_sum + (1-alpha)*prev_max;
-    prev_min = alpha*min_sum + (1-alpha)*prev_min;
-
-	struct Component r;
-	//r.image = components;
-	r.area = area;
-
-	if(max_sum<=MAX_SUM_THRESHOLD || area == 0){
-		r.x = -1;
-		r.y = -1;
-	}
-	else{
-		r.x = moment_x/area;
-		r.y = moment_y/area;
-	}
-
-	return r;
-}
-
 #if ARM
 struct Component threshold_frame(char* frame,int rows, int cols){
     char *components = frame;
@@ -126,7 +68,7 @@ Component threshold_frame(Mat frame){
     Mat components = Mat::zeros( rows, cols, CV_8UC3 );
 #endif
     int i,j;
-    int max_components = 1; //maximum number of connected components to find
+    int max_components = 500; //maximum number of connected components to find
     int equivalent[max_components]; //data structure to handle merging connected components
     int size[max_components]; //count the size of each components
     int moment_x[max_components]; //calculate the moment x of each component
@@ -209,7 +151,7 @@ Component threshold_frame(Mat frame){
                     //make a new component
                     set_image_value(components,i,j,0,cols,id);
                     if(id<max_components-1)
-                        id+=1;
+                        id++;
                 }
             }
             else{

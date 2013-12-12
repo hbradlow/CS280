@@ -20,6 +20,9 @@ sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 from MAVProxy.modules.lib import textconsole
 from MAVProxy.modules.lib import mp_settings
 
+timestep_received = False
+timestep_count = 0
+
 class MPStatus(object):
     '''hold status information about the mavproxy'''
     def __init__(self):
@@ -1617,6 +1620,10 @@ def master_callback(m, master):
         
     elif mtype == 'STATUSTEXT':
         if m.text != mpstate.status.last_apm_msg or time.time() > mpstate.status.last_apm_msg_time+2:
+	    global timestep_received
+	    global timestep_count
+	    timestep_received = True
+	    timestep_count += 1
             mpstate.console.writeln("APM: %s" % m.text, bg='red')
             mpstate.status.last_apm_msg = m.text
             mpstate.status.last_apm_msg_time = time.time()
@@ -1912,9 +1919,9 @@ def open_logs():
     # use a separate thread for writing to the logfile to prevent
     # delays during disk writes (important as delays can be long if camera
     # app is running)
-    t = threading.Thread(target=log_writer)
-    t.daemon = True
-    t.start()
+    #t = threading.Thread(target=log_writer)
+    #t.daemon = True
+    #t.start()
 
 def set_stream_rates():
     '''set mavlink stream rates'''
@@ -1940,6 +1947,7 @@ def check_link_status():
     if mpstate.status.last_message != 0 and tnow > mpstate.status.last_message + 5:
         say("no link")
         mpstate.status.heartbeat_error = True
+	exit()
     for master in mpstate.mav_master:
         if not master.linkerror and tnow > master.last_message + 5:
             say("link %u down" % (master.linknum+1))
@@ -2029,6 +2037,7 @@ def main_loop():
                 master.param_fetch_all()
         set_stream_rates()
 
+    counter = 0
     while True:
         if mpstate is None or mpstate.status.exit:
             return
@@ -2043,7 +2052,11 @@ def main_loop():
                 if master.port.inWaiting() > 0:
                     process_master(master)
 
-        periodic_tasks()
+	global timestep_received
+	global timestep_count
+	periodic_tasks()
+	timestep_received = False
+        counter += 1
 
         rin = []
         for master in mpstate.mav_master:
@@ -2216,7 +2229,7 @@ Auto-detected serial ports are:
 
     # open master link
     for mdev in opts.master:
-        m = mavutil.mavlink_connection(mdev, autoreconnect=True, baud=opts.baudrate)
+        m = mavutil.mavlink_connection(mdev, autoreconnect=False, baud=opts.baudrate)
         m.mav.set_callback(master_callback, m)
         if hasattr(m.mav, 'set_send_callback'):
             m.mav.set_send_callback(master_send_callback, m)
@@ -2302,14 +2315,16 @@ Auto-detected serial ports are:
             process_stdin(c)
 
     # run main loop as a thread
-    mpstate.status.thread = threading.Thread(target=main_loop)
-    mpstate.status.thread.daemon = True
-    mpstate.status.thread.start()
+    #mpstate.status.thread = threading.Thread(target=main_loop)
+    #mpstate.status.thread.daemon = True
+    #mpstate.status.thread.start()
 
+    main_loop()
     # use main program for input. This ensures the terminal cleans
     # up on exit
     try:
-        input_loop()
+	pass
+        #input_loop()
     except KeyboardInterrupt:
         print("exiting")
         mpstate.status.exit = True

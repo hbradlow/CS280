@@ -12,6 +12,10 @@ class Tracker:
         self.cov = None
         self.kf = KalmanFilter(initial_state_mean=self.mean,n_dim_obs=3)
 
+	self.raw_x = 0
+	self.raw_y = 0
+	self.raw_area = 0
+
         means,c = self.kf.filter([self.mean,self.mean])
         self.mean = means[-1]
         self.cov = c[-1]
@@ -26,7 +30,7 @@ class Tracker:
 	self.mode = m
 
     def register_reading(self,x,y,area):
-        if x == -1:
+        if x == -2:
             x = ma.masked
             self.fail_counter += 1
         else:
@@ -34,8 +38,9 @@ class Tracker:
         self.mean,self.cov = self.kf.filter_update(self.mean,self.cov,[x,y,area])
 
     def update(self):
-	x = vision.process_frame()
-	self.register_reading(x,0,0)
+	c = vision.process_frame()
+	self.raw_x = c.y*2
+	self.register_reading(c.y*2,0,c.area)
         self.send_update()
 
     def x(self):
@@ -48,34 +53,53 @@ class Tracker:
         return self.mean[2]
 
     def __repr__(self):
-        return str(self.x()) + ", " + str(self.y()) + ", " + str(self.area())
+        return str(self.raw_x) + ", " + str(self.y()) + ", " + str(self.area())
 
     def send_update(self):
         print self
-	vision.log_string("SENDING VALUE: " + str(self.x()) + "\n")
+	x_to_send = self.raw_x
+	if x_to_send == -2:
+		x_to_send = self.x()
+	vision.log_string("SENDING VALUE: " + str(x_to_send) + "\n")
         if self.fail_counter > self.fail_threshold:
             #all middle values
             mpstate.master().track(127,127,127)
         else:
-            mpstate.master().track(self.x(),self.y(),self.area())
+            mpstate.master().track(x_to_send,self.y(),self.area())
 
 def init(_mpstate):
+    print "STARTING"
     global mpstate
     mpstate = _mpstate
 
     mpstate.tracker = Tracker()
     vision.start()
 
-    vision_thread = threading.Thread(target=vision_loop)
-    vision_thread.daemon = True
-    vision_thread.start()
+    print "After start"
+    mpstate.status.thread = threading.Thread(target=vision_loop)
+    mpstate.status.thread.daemon = True
+    mpstate.status.thread.start()
 
+s = time.time()
 def vision_loop():
+    global s
     while True:
-        time.sleep(.1)
-        mpstate.tracker.update()
+	#time.sleep(.01)
+	mpstate.tracker.update()
+	print "TIME_________________________________________________:",1000*(time.time()-s)
+	s = time.time()
+
+"""
+def idle_task():
+    #time.sleep(.5)
+    #mpstate.tracker.update()
+    #mpstate.tracker.send_update()
+    pass
+"""
 
 def mavlink_packet(m):
+    if m.get_type() == "STATUSTEXT":
+	vision.log_string(m.text)
     if m.get_type() == "HEARTBEAT":
 	mpstate.tracker.set_mode(m.custom_mode)
 

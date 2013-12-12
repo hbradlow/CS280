@@ -26,7 +26,7 @@ Component found;
 GfxTexture texture;
 
 int counter = 0;
-int log_period = 5;
+int log_period = 20;
 
 char *txt_log_filename = "logs/data.txt";
 FILE *txt_log;
@@ -47,22 +47,28 @@ void log_string(string value){
 void set_log_period(int p){
 	log_period = p;
 }
-float process_frame(){
+Component process_frame(){
 	cam->ReadFrame(0,tmpbuff,sizeof(tmpbuff));
 
 
-	found = threshold_frame(tmpbuff,HEIGHT,WIDTH);
+	found = threshold_simple(tmpbuff,HEIGHT,WIDTH);
 
 	// log the image, the found data, and the timestamp
-	if(counter%log_period == 0){
+	if(counter%log_period == 0 && false){
 		int num = (int)counter/log_period;
 		char filename[50];
 		sprintf(filename,"logs/image_%d.jpg",num);
+
+		char filename_thresh[50];
+		sprintf(filename_thresh,"logs/image_thresh_%d.jpg",num);
 
 		Mat m = Mat(HEIGHT,WIDTH,CV_8UC4,tmpbuff);
 		Mat rgb;
 		cvtColor(m,rgb,CV_BGR2RGB);
 		imwrite(filename,rgb);
+
+		Mat thresh = Mat(HEIGHT,WIDTH,CV_8UC4,found.image);
+		imwrite(filename_thresh,thresh);
 	
 		clock_t c = clock();
 		float t = (float)c/CLOCKS_PER_SEC;
@@ -74,7 +80,7 @@ float process_frame(){
 	}
 	counter += 1;
 
-	return found.y;
+	return found;
 }
 void stop(){
 	StopCamera();
@@ -88,8 +94,8 @@ int main(int argc, const char **argv)
 	printf("Running frame loop\n");
 	for(int i = 0; i < 3000; i++)
 	{
-		process_frame();
-		cout << "HERE" << endl;
+		Component results = process_frame();
+		cout << "HERE " << results.x << " " << results.y << " " << results.area << endl;
 		texture.SetPixels(found.image);
 
 		BeginFrame();
@@ -108,4 +114,5 @@ BOOST_PYTHON_MODULE(libmain_py){
 	def("log_string",log_string);
 	def("process_frame",process_frame);
 	def("stop",stop);
+	class_<Component>("Component").def_readonly("x",&Component::x).def_readonly("y",&Component::y).def_readonly("area",&Component::area);
 }
