@@ -6,6 +6,7 @@ import scipy.ndimage
 import cPickle
 import collections
 import config
+import utils
 
 import argparse
 parser = argparse.ArgumentParser()
@@ -14,7 +15,6 @@ parser.add_argument('output')
 args = parser.parse_args()
 
 FRAME_SKIP = 10
-WINDOW_SIZE = 800
 
 curr_frame_num = 0
 data = collections.defaultdict(dict)
@@ -41,10 +41,7 @@ capture = cv2.VideoCapture(args.input_video)
 while True:
     print 'Frame:', curr_frame_num
     retval, image = capture.read()
-    #image = cv2.cvtColor(orig_image, cv2.cv.CV_RGB2GRAY)
-
-    zoom_factor = WINDOW_SIZE / float(max(image.shape[:2]))
-    image = scipy.ndimage.interpolation.zoom(image, (zoom_factor, zoom_factor, 1))
+    image = utils.canonicalize_image(image)
 
     cv2.namedWindow('frame')
     cv.SetMouseCallback('frame', on_mouse, image)
@@ -73,7 +70,7 @@ for k in data:
 
   full_img = data[k]['full_img']
   start, end = data[k]['start'], data[k]['end']
-  for i in range(len(positive_patches)):
+  for i in range(len(positive_patches)*100):
     while True:
       a = np.random.randint(0, full_img.shape[0]-config.PATCH_SIZE)
       b = np.random.randint(0, full_img.shape[1]-config.PATCH_SIZE)
