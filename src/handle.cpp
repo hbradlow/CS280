@@ -1,8 +1,8 @@
 #ifndef _HANDLE
 #define _HANDLE
 #define ARM 0
-#define PI 1
-#define DEBUG 0
+#define PI 0
+#define DEBUG 1
 
 #if ARM
 #else
@@ -34,6 +34,8 @@
 	#define MAX_SUM_THRESHOLD 155
 #endif
 
+#define UPPER_THRESHOLD 175
+#define LOWER_THRESHOLD 100
 
 float prev_max = 0;
 float prev_min = 255;
@@ -54,25 +56,73 @@ struct Component
 #endif
 };
 
+void hyst_pixel(Mat frame, int x, int y, int rows, int cols, float* moment_x, float* moment_y, float* area){
+    int i,j;
+    for(j = y-1; j<=y+1; j++){
+        for(i = x-1; i<=x+1; i++){
+            if(i<cols && j<rows && i>0 && j>0 && i!=j){
+                if(get_image_value(frame,i,j,0,cols) == 255){
+                    return;
+                }
+                int u = GETU(frame,i,j,cols);
+                int v = GETV(frame,i,j,cols);
+                //calculate the inverse of the sum of the channels
+                int sum = 255 - (u + v)/2;
+
+                if(prev_max-prev_min != 0)
+                {
+                    sum = (sum-prev_min)*(255/(prev_max-prev_min));
+                }
+
+                if(sum>LOWER_THRESHOLD){
+                    *moment_x+=i;
+                    *moment_y+=j;
+                    *area+=1;
+                    set_image_value(frame,i,j,0,cols,255);
+                    hyst_pixel(frame, i,j,rows,cols,moment_x,moment_y,area);
+                }
+            }
+        }
+    }
+}
+
+#if PI
 Component threshold_simple(char* frame, int rows, int cols){
-    //char components[rows*cols*4];
+#else
+Component threshold_simple(Mat frame){
+    int rows = frame.rows;
+    int cols = frame.cols;
+#endif
+
+#if DEBUG
+ #if PI
+    char components[rows*cols*4];
+ #endif
+#endif
+
 	int i,j;
 
-float area = 0;
-float moment_x;
-float moment_y;	
+    float area = 0;
+    float moment_x;
+    float moment_y;	
 
     int max_sum = 0;
     int min_sum = 255;
 
     for(j = 0; j<rows; j++){
         for(i = 0; i<cols; i++){
-	//set_image_value(components,i,j,0,cols,0);
+#if PI
             int r = frame[4*(j*cols+i)];
             int g = frame[4*(j*cols+i)+1];
             int b = frame[4*(j*cols+i)+2];
             int intensity = (r+g+b)/3;
             int sum = max(((r+g)/2-intensity),0);
+#else
+            int u = GETU(frame,i,j,cols);
+            int v = GETV(frame,i,j,cols);
+            //calculate the inverse of the sum of the channels
+            int sum = 255 - (u + v)/2;
+#endif
 
             if(sum>max_sum)
                 max_sum = sum;
@@ -84,21 +134,29 @@ float moment_y;
                 sum = (sum-prev_min)*(255/(prev_max-prev_min));
             }
 
-	    if(sum>175){
-			area += 1;
-			moment_x += j;
-			moment_y += i;
-                        //set_image_value(components,i,j,0,cols,255);
-		}	
-	}
+
+            if(sum>UPPER_THRESHOLD){
+                area += 1;
+                moment_x += j;
+                moment_y += i;
+                set_image_value(frame,i,j,0,cols,255);
+                hyst_pixel(frame, i,j,rows,cols,&moment_x,&moment_y,&area);
+            }	
+            else{
+                set_image_value(frame,i,j,0,cols,0);
+            }
+        }
 	}
 
     prev_max = alpha*max_sum + (1-alpha)*prev_max;
     prev_min = alpha*min_sum + (1-alpha)*prev_min;
 
 	struct Component r;
-	//r.image = components;
 	r.area = area;
+
+#if DEBUG
+	r.image = frame;
+#endif
 
 	if(max_sum<=MAX_SUM_THRESHOLD || area == 0){
 		r.x = -1;

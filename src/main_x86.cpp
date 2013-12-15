@@ -26,7 +26,7 @@ int process_frame(){
 
     cvtColor(frame,frame,CV_BGR2YCrCb);
 
-    found = threshold_frame(frame);
+    found = threshold_simple(frame);
     current_frame = found.image;
 
     return found.x;
