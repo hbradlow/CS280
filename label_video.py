@@ -58,26 +58,28 @@ while True:
       curr_frame_num += 1
 
 # now make a training set
-import sklearn
-import sklearn.feature_extraction
+
+#import sklearn
+#import sklearn.feature_extraction
 all_patches = []
 POS_LABEL = 1
 NEG_LABEL = -1
 for k in data:
-  positive_patches = sklearn.feature_extraction.image.extract_patches_2d(data[k]['box_img'], (config.PATCH_SIZE, config.PATCH_SIZE))
-  for p in positive_patches:
-    all_patches.append((p, POS_LABEL))
+  #positive_patches = sklearn.feature_extraction.image.extract_patches_2d(data[k]['box_img'], (config.PATCH_SIZE, config.PATCH_SIZE))
+  #for p in positive_patches:
+  #  all_patches.append((p, POS_LABEL))
+  all_patches.append((utils.rect_to_patch(data[k]['box_img']), POS_LABEL))
 
   full_img = data[k]['full_img']
   start, end = data[k]['start'], data[k]['end']
-  for i in range(len(positive_patches)*100):
+  for _ in range(config.NEG_EXAMPLES_PER_POSITIVE):
     while True:
-      a = np.random.randint(0, full_img.shape[0]-config.PATCH_SIZE)
-      b = np.random.randint(0, full_img.shape[1]-config.PATCH_SIZE)
+      a = np.random.randint(0, full_img.shape[1]-config.PATCH_SIZE)
+      b = np.random.randint(0, full_img.shape[0]-config.PATCH_SIZE)
       if a > end[0] or b > end[1] or a+config.PATCH_SIZE < start[0] or b+config.PATCH_SIZE < start[1]:
         if b+config.PATCH_SIZE < image.shape[0] and a+config.PATCH_SIZE < image.shape[1]:
           p = image[b:b+config.PATCH_SIZE,a:a+config.PATCH_SIZE]
-          all_patches.append((p, NEG_LABEL))
+          all_patches.append((utils.rect_to_patch(p), NEG_LABEL))
           break
 
 data['all_patches'] = all_patches
