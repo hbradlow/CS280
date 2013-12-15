@@ -2,7 +2,7 @@
 #define _HANDLE
 #define ARM 0
 #define PI 0
-#define DEBUG 1
+#define DEBUG 0
 
 #if ARM
 #else
@@ -40,6 +40,7 @@
 float prev_max = 0;
 float prev_min = 255;
 float alpha = .2;
+Mat components;
 
 float prev_x,prev_y; 
 struct Component
@@ -56,18 +57,33 @@ struct Component
 #endif
 };
 
-void hyst_pixel(Mat frame, int x, int y, int rows, int cols, float* moment_x, float* moment_y, float* area){
+#if PI
+void hyst_pixel(char* frame, int x, int y, int rows, int cols,
+        float* moment_x, float* moment_y, float* area, int depth){
+#else
+void hyst_pixel(Mat frame, int x, int y, int rows, int cols,
+        float* moment_x, float* moment_y, float* area, int depth){
+#endif
+    if(depth>10)
+        return;
+
     int i,j;
     for(j = y-1; j<=y+1; j++){
         for(i = x-1; i<=x+1; i++){
-            if(i<cols && j<rows && i>0 && j>0 && i!=j){
-                if(get_image_value(frame,i,j,0,cols) == 255){
-                    return;
-                }
+            if(i<cols && j<rows && i>0 && j>0 && i!=x && j!=y
+                        && get_image_value(frame,i,j,0,cols) != 255){
+#if PI
+                int r = frame[4*(j*cols+i)];
+                int g = frame[4*(j*cols+i)+1];
+                int b = frame[4*(j*cols+i)+2];
+                int intensity = (r+g+b)/3;
+                int sum = max(((r+g)/2-intensity),0);
+#else
                 int u = GETU(frame,i,j,cols);
                 int v = GETV(frame,i,j,cols);
                 //calculate the inverse of the sum of the channels
                 int sum = 255 - (u + v)/2;
+#endif
 
                 if(prev_max-prev_min != 0)
                 {
@@ -79,7 +95,11 @@ void hyst_pixel(Mat frame, int x, int y, int rows, int cols, float* moment_x, fl
                     *moment_y+=j;
                     *area+=1;
                     set_image_value(frame,i,j,0,cols,255);
-                    hyst_pixel(frame, i,j,rows,cols,moment_x,moment_y,area);
+#if DEBUG
+                    set_image_value(components,i,j,1,cols,255);
+#endif
+                    hyst_pixel(frame,i,j,rows,cols,
+                                moment_x,moment_y,area,depth+1);
                 }
             }
         }
@@ -97,6 +117,8 @@ Component threshold_simple(Mat frame){
 #if DEBUG
  #if PI
     char components[rows*cols*4];
+ #else
+    components = Mat::zeros( rows, cols, CV_8UC3 );
  #endif
 #endif
 
@@ -140,10 +162,13 @@ Component threshold_simple(Mat frame){
                 moment_x += j;
                 moment_y += i;
                 set_image_value(frame,i,j,0,cols,255);
-                hyst_pixel(frame, i,j,rows,cols,&moment_x,&moment_y,&area);
+                hyst_pixel(frame, i,j,rows,cols,&moment_x,&moment_y,&area,0);
+#if DEBUG
+                set_image_value(components,i,j,0,cols,255);
             }	
             else{
-                set_image_value(frame,i,j,0,cols,0);
+                set_image_value(components,i,j,0,cols,0);
+#endif
             }
         }
 	}
@@ -155,6 +180,8 @@ Component threshold_simple(Mat frame){
 	r.area = area;
 
 #if DEBUG
+	r.image = components;
+#else
 	r.image = frame;
 #endif
 
