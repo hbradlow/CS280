@@ -33,8 +33,7 @@ float prev_max = 0;
 float prev_min = 255;
 float alpha = .2;
 
-float prev_x,prev_y;
-
+float prev_x,prev_y; 
 struct Component
 {
     float x;
@@ -62,7 +61,7 @@ Component threshold_frame(Mat frame){
     Mat components = Mat::zeros( rows, cols, CV_8UC3 );
 #endif
     int i,j;
-    int max_components = 200; //maximum number of connected components to find
+    int max_components = 1; //maximum number of connected components to find
     int equivalent[max_components]; //data structure to handle merging connected components
     int size[max_components]; //count the size of each components
     int moment_x[max_components]; //calculate the moment x of each component

@@ -48,7 +48,7 @@ int main(){
             cout << -1 << " " << -1 << " " << -1 << endl;
 
         //display the frame
-        imshow("Output",current_frame);
+        imshow("Output",found.image);
 
         //Wait 10mS
         int c = cvWaitKey(10);

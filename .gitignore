@@ -8,3 +8,5 @@ build
 *.log*
 *.tlog*
 *.MOV
+*.pkl
+*.jpg
