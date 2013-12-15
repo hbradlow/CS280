@@ -1,15 +1,20 @@
 #include <stdio.h>
 #include <boost/python.hpp>
 #include <unistd.h>
-#include <ctime>
+#include <string>
+#include <time.h>
 #include "picam/camera.h"
 #include "picam/graphics.h"
 #include "handle.cpp"
+
+#include <cv.h>
+#include <highgui.h>
 
 #define WIDTH 256
 #define HEIGHT 256
 
 using namespace std;
+using namespace cv;
 
 char tmpbuff[WIDTH*HEIGHT*4];
 int max_sum = 0;
@@ -20,22 +25,67 @@ int num_levels = 1;
 Component found;
 GfxTexture texture;
 
+int counter = 0;
+int log_period = 20;
+
+char *txt_log_filename = "logs/data.txt";
+FILE *txt_log;
+
 void start(){
 	printf("Starting\n");
 	cam = StartCamera(WIDTH, HEIGHT,30,num_levels,do_argb_conversion);
+
+	txt_log = fopen(txt_log_filename,"a");
+	fprintf(txt_log,"START----------------------------------\n");
+	fclose(txt_log);
 }
-float process_frame(){
+void log_string(string value){
+	txt_log = fopen(txt_log_filename,"a");
+	fprintf(txt_log,value.c_str());
+	fclose(txt_log);
+}
+void set_log_period(int p){
+	log_period = p;
+}
+Component process_frame(){
 	cam->ReadFrame(0,tmpbuff,sizeof(tmpbuff));
 
-	found = threshold_frame(tmpbuff,HEIGHT,WIDTH);
 
-	return found.y;
+	found = threshold_simple(tmpbuff,HEIGHT,WIDTH);
+
+	// log the image, the found data, and the timestamp
+	if(counter%log_period == 0 && false){
+		int num = (int)counter/log_period;
+		char filename[50];
+		sprintf(filename,"logs/image_%d.jpg",num);
+
+		char filename_thresh[50];
+		sprintf(filename_thresh,"logs/image_thresh_%d.jpg",num);
+
+		Mat m = Mat(HEIGHT,WIDTH,CV_8UC4,tmpbuff);
+		Mat rgb;
+		cvtColor(m,rgb,CV_BGR2RGB);
+		imwrite(filename,rgb);
+
+		Mat thresh = Mat(HEIGHT,WIDTH,CV_8UC4,found.image);
+		imwrite(filename_thresh,thresh);
+	
+		clock_t c = clock();
+		float t = (float)c/CLOCKS_PER_SEC;
+
+		txt_log = fopen(txt_log_filename,"a");
+		fprintf(txt_log,"NUM: %d, X: %f, Y: %f, AREA: %f, TIME: %f\n",
+				num,found.x,found.y,found.area,t);
+		fclose(txt_log);
+	}
+	counter += 1;
+
+	return found;
 }
 void stop(){
 	StopCamera();
 }
 
-//entry point
 int main(int argc, const char **argv)
 {
 	start();
@@ -44,8 +94,8 @@ int main(int argc, const char **argv)
 	printf("Running frame loop\n");
 	for(int i = 0; i < 3000; i++)
 	{
-		process_frame();
-		cout << "HERE" << endl;
+		Component results = process_frame();
+		cout << "HERE " << results.x << " " << results.y << " " << results.area << endl;
 		texture.SetPixels(found.image);
 
 		BeginFrame();
@@ -61,6 +111,8 @@ int main(int argc, const char **argv)
 BOOST_PYTHON_MODULE(libmain_py){
 	using namespace boost::python;
 	def("start",start);
+	def("log_string",log_string);
 	def("process_frame",process_frame);
 	def("stop",stop);
+	class_<Component>("Component").def_readonly("x",&Component::x).def_readonly("y",&Component::y).def_readonly("area",&Component::area);
 }

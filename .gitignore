@@ -1,11 +1,14 @@
 *.swp
+*~
 *.o
 data
 build
 .DS_Store
 *.so
 *.py[co]
-*.log*
+*.tlog*
+logs
+logs_*
 *.tlog*
 *.MOV
 *.pkl

@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 2.8)
 
 set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
-set(X86 1)
-set(PI 0)
+set(X86 0)
+set(PI 1)
 
 find_package(OpenCV REQUIRED)
 find_package(Boost REQUIRED COMPONENTS python)
