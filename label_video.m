@@ -8,15 +8,14 @@ video_source = vision.VideoFileReader(VIDEO_FILE, 'ImageColorSpace', 'RGB', 'Vid
 
 figure;
 curr_frame = 0;
-boxes = []; frames = {};
+h = LabelDataHandle;
 
   function [] = on_exit(data_handle)
     boxes = data_handle.boxes; frames = data_handle.frames;
     save(Cfg.LABEL_FILE, 'boxes', 'frames');
     fprintf('Saved to %s\n', Cfg.LABEL_FILE);
   end
-
-cleanup_obj = onCleanup(@() on_exit(data_handle));
+cleanup_obj = onCleanup(@() on_exit(h));
 
 while ~isDone(video_source)
   frame = imresize(step(video_source), SCALE); curr_frame = curr_frame + 1;
@@ -24,9 +23,8 @@ while ~isDone(video_source)
   imshow(frame);
   box = round(getPosition(imrect));
   if box(3) ~= 0 && box(4) ~= 0
-    boxes = [boxes; box];
-    frames{end+1} = frame;
-%     save(Cfg.OUTPUT_FILE, 'boxes', 'frames');
+    h.boxes = [h.boxes; box];
+    h.frames{end+1} = frame;
     fprintf('saved\n');
   else
     fprintf('skipped\n');
