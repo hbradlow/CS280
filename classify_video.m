@@ -3,7 +3,7 @@ clear; clc; close all;
 VIDEO_FILE = '/Users/jonathan/Downloads/output.mp4';
 CLASSIFIER_FILE = 'out/training/classifier.mat';
 SCALE = 1;
-FRAME_SKIP = 10;
+FRAME_SKIP = 30;
 PATCH_SIZE = 40;
 
 video_source = vision.VideoFileReader(VIDEO_FILE, 'ImageColorSpace', 'RGB', 'VideoOutputDataType', 'double');
@@ -16,16 +16,17 @@ while ~isDone(video_source)
 
   fprintf('got frame\n');
   
+  SKIP = 20;
   total = 0;
-  for i=1:50:size(frame, 2)-PATCH_SIZE
-    for j=1:50:size(frame, 1)-PATCH_SIZE
+  for i=1:SKIP:size(frame, 2)-PATCH_SIZE
+    for j=1:SKIP:size(frame, 1)-PATCH_SIZE
       total = total + 1;
     end
   end
   patch_features = zeros(total, length(compute_features(frame(1:PATCH_SIZE,1:PATCH_SIZE,:))));
   curr = 0;
-  for i=1:50:size(frame, 2)-PATCH_SIZE
-    for j=1:50:size(frame, 1)-PATCH_SIZE
+  for i=1:SKIP:size(frame, 2)-PATCH_SIZE
+    for j=1:SKIP:size(frame, 1)-PATCH_SIZE
       curr = curr + 1;
       p = frame(j:j+PATCH_SIZE-1,i:i+PATCH_SIZE-1,:);
       patch_features(curr,:) = compute_features(p)';
@@ -33,8 +34,8 @@ while ~isDone(video_source)
   end
   svm_results = svmclassify(svm, patch_features);
   curr = 0;
-  for i=1:50:size(frame, 2)-PATCH_SIZE
-    for j=1:50:size(frame, 1)-PATCH_SIZE
+  for i=1:SKIP:size(frame, 2)-PATCH_SIZE
+    for j=1:SKIP:size(frame, 1)-PATCH_SIZE
       curr = curr + 1;
       if svm_results(curr) == 1
         result = insertShape(result, 'Rectangle', [i j PATCH_SIZE PATCH_SIZE], 'Color', 'green');
@@ -57,8 +58,8 @@ while ~isDone(video_source)
 %   
 %   result(y_im == 1) = [255 0 0];
   
-%   for i=1:50:size(frame, 2)-PATCH_SIZE
-%     for j=1:50:size(frame, 1)-PATCH_SIZE
+%   for i=1:SKIP:size(frame, 2)-PATCH_SIZE
+%     for j=1:SKIP:size(frame, 1)-PATCH_SIZE
 %       box = [i j PATCH_SIZE PATCH_SIZE];
 %       p = imcrop(frame, box);
 %       p = p(1:PATCH_SIZE,1:PATCH_SIZE,:);
