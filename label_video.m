@@ -1,7 +1,6 @@
-clear; clc; close all;
-
+function [] = label_video()
+close all;
 VIDEO_FILE = '/Users/jonathan/Downloads/output.mp4';
-OUTPUT_FILE = 'out/training/labels.mat';
 SCALE = 1;
 FRAME_SKIP = 10;
 
@@ -10,6 +9,15 @@ video_source = vision.VideoFileReader(VIDEO_FILE, 'ImageColorSpace', 'RGB', 'Vid
 figure;
 curr_frame = 0;
 boxes = []; frames = {};
+
+  function [] = on_exit(data_handle)
+    boxes = data_handle.boxes; frames = data_handle.frames;
+    save(Cfg.LABEL_FILE, 'boxes', 'frames');
+    fprintf('Saved to %s\n', Cfg.LABEL_FILE);
+  end
+
+cleanup_obj = onCleanup(@() on_exit(data_handle));
+
 while ~isDone(video_source)
   frame = imresize(step(video_source), SCALE); curr_frame = curr_frame + 1;
 
@@ -18,7 +26,7 @@ while ~isDone(video_source)
   if box(3) ~= 0 && box(4) ~= 0
     boxes = [boxes; box];
     frames{end+1} = frame;
-    save(OUTPUT_FILE, 'boxes', 'frames');
+%     save(Cfg.OUTPUT_FILE, 'boxes', 'frames');
     fprintf('saved\n');
   else
     fprintf('skipped\n');
@@ -29,4 +37,4 @@ while ~isDone(video_source)
   end
 end
 
-release(video_source);
+end
