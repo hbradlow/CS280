@@ -1,7 +1,7 @@
 classdef Cfg
   properties (Constant = true)
     % Pipeline intermediate files
-    LABEL_FILE = 'out/training/labels_tmp.mat';
+    LABEL_FILE = 'out/training/labels.mat';
     POS_EXAMPLES_DIR = 'out/training/pos';
     NEG_EXAMPLES_DIR = 'out/training/neg';
     CLASSIFIER_FILE = 'out/training/classifier.mat';

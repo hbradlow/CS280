@@ -1,15 +1,15 @@
 function [] = label_video()
 close all;
-VIDEO_FILE = '/Users/jonathan/Downloads/output.mp4';
+%VIDEO_FILE = '/Users/jonathan/Downloads/output.mp4';
+VIDEO_FILE_MAT = '/Users/jonathan/Downloads/output.mp4.mat';
 SCALE = 1;
-FRAME_SKIP = 10;
+%FRAME_SKIP = 10;
 
-video_source = vision.VideoFileReader(VIDEO_FILE, 'ImageColorSpace', 'RGB', 'VideoOutputDataType', 'double');
+%video_source = vision.VideoFileReader(VIDEO_FILE, 'ImageColorSpace', 'RGB', 'VideoOutputDataType', 'double');
+video = load(VIDEO_FILE_MAT); video = video.frames;
 
 figure;
-curr_frame = 0;
 h = LabelDataHandle;
-
   function [] = on_exit(data_handle)
     boxes = data_handle.boxes; frames = data_handle.frames;
     save(Cfg.LABEL_FILE, 'boxes', 'frames');
@@ -17,21 +17,23 @@ h = LabelDataHandle;
   end
 cleanup_obj = onCleanup(@() on_exit(h));
 
-while ~isDone(video_source)
-  frame = imresize(step(video_source), SCALE); curr_frame = curr_frame + 1;
+for i=1:length(video)
+  frame = imresize(video{i}, SCALE);
 
   imshow(frame);
-  box = round(getPosition(imrect));
-  if box(3) ~= 0 && box(4) ~= 0
+  pt = round(getPosition(impoint));
+
+  fprintf('Frame %d/%d (%f%%)\n', i, length(video), 100*i/length(video));
+%   fprintf('%d, %d\n', pt(2), .9*size(frame,1));
+  
+  if pt(2) < .9*size(frame,1)
+    box = [floor(pt(1) - Cfg.PATCH_SIZE/2), floor(pt(2) - Cfg.PATCH_SIZE/2), Cfg.PATCH_SIZE-1, Cfg.PATCH_SIZE-1];
+%     imrect(gca, box);
     h.boxes = [h.boxes; box];
     h.frames{end+1} = frame;
     fprintf('saved\n');
   else
     fprintf('skipped\n');
-  end
-
-  for i=1:FRAME_SKIP
-    step(video_source); curr_frame = curr_frame + 1;
   end
 end
 
