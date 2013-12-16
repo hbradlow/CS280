@@ -2,6 +2,7 @@ clear; clc; close all;
 
 POS_EXAMPLES_DIR = 'out/training/pos';
 NEG_EXAMPLES_DIR = 'out/training/neg';
+CLASSIFIER_OUTPUT = 'out/training/classifier.mat';
 
 % load all examples and compute features
 examples = struct('img', {}, 'X', {}, 'y', {});
@@ -29,7 +30,7 @@ training_set_size = floor(TRAINING_SET_FRAC*length(examples));
 training_set = examples(1:training_set_size);
 test_set = examples(training_set_size+1:end);
 
-svm = svmtrain([training_set.X]', [training_set.y]);
+svm = svmtrain([training_set.X]', [training_set.y], 'boxconstraint', .001, 'tolkkt', 1e-5);
 
 % test
 num_errors = 0;
@@ -44,3 +45,6 @@ for i=1:length(test_set)
   end
 end
 fprintf('%d errors out of %d. %f%%\n', num_errors, length(test_set), 100*num_errors/length(test_set));
+
+% save classifier
+save(CLASSIFIER_OUTPUT, 'svm');
