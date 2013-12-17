@@ -1,30 +1,48 @@
 clear; clc; close all;
 
 %% Load all examples
+pos_files = dir([Cfg.POS_EXAMPLES_DIR '/*.png'])';
+neg_files = dir([Cfg.NEG_EXAMPLES_DIR '/*.png'])';
+
 examples = struct('img', {}, 'X', {}, 'y', {});
+
+bar = waitbar(0, 'Loading images');
+
 for file=dir([Cfg.POS_EXAMPLES_DIR '/*.png'])'
   i = length(examples) + 1;
   im = imread([Cfg.POS_EXAMPLES_DIR '/' file.name]);
+  if size(im, 1) ~= Cfg.PATCH_SIZE || size(im, 2) ~= Cfg.PATCH_SIZE
+    fprintf('skipped\n');
+    continue
+  end
   examples(i).img = im;
   examples(i).y = 1;
+  waitbar(i/(length(pos_files)+length(neg_files)), bar);
 end
-
-% Z = zeros(PATCH_SIZE, PATCH_SIZE, 3, length(examples));
-% for i=1:length(examples)
-%   Z(:,:,:,i) = examples(i).img;
-% end
-% figure; montage(Z);
 
 for file=dir([Cfg.NEG_EXAMPLES_DIR '/*.png'])'
   i = length(examples) + 1;
-  examples(i).img = imread([Cfg.NEG_EXAMPLES_DIR '/' file.name]);
+  im = imread([Cfg.NEG_EXAMPLES_DIR '/' file.name]);
+  if size(im, 1) ~= Cfg.PATCH_SIZE || size(im, 2) ~= Cfg.PATCH_SIZE
+    fprintf('skipped\n');
+    continue
+  end
+  examples(i).img = im;
   examples(i).y = -1;
+  waitbar((i+length(pos_files))/(length(pos_files)+length(neg_files)), bar);
 end
 
+close(bar);
+
+fprintf('Loaded %d positive and %d negative examples\n', length(pos_files), length(neg_files));
+
 %% Compute features
+box = waitbar(0, 'Computing features');
 for i=1:length(examples)
   examples(i).X = compute_features(examples(i).img);
+  waitbar(i/length(examples), box);
 end
+close(box);
 
 %% Randomize and split training/test sets
 examples = examples(randperm(length(examples)));
@@ -44,7 +62,6 @@ for i=1:length(test_set)
   if y_classifier ~= y_true
     num_errors = num_errors + 1;
     fprintf('error: %d, true: %d\n', y_classifier, y_true);
-    test_set(i).X
     figure; imshow(test_set(i).img);
   end
 end

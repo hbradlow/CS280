@@ -5,7 +5,7 @@ classdef Cfg
     POS_EXAMPLES_DIR = 'out/training/pos';
     NEG_EXAMPLES_DIR = 'out/training/neg';
     CLASSIFIER_FILE = 'out/training/classifier.mat';
-    TRAINING_SET_FRAC = .75;
+    TRAINING_SET_FRAC = .9;
     
     % Algorithm parameters
     PATCH_SIZE = 40;
