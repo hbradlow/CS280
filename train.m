@@ -1,4 +1,5 @@
-clear; clc; close all;
+close all;
+rng('default');
 
 %% Load all examples
 pos_files = dir([Cfg.POS_EXAMPLES_DIR '/*.png'])';
@@ -62,7 +63,7 @@ for i=1:length(test_set)
   if y_classifier ~= y_true
     num_errors = num_errors + 1;
     fprintf('error: %d, true: %d\n', y_classifier, y_true);
-    figure; imshow(test_set(i).img);
+    %figure; imshow(test_set(i).img);
   end
 end
 fprintf('%d errors out of %d. %f%%\n', num_errors, length(test_set), 100*num_errors/length(test_set));

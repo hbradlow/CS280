@@ -10,6 +10,12 @@ classdef Cfg
     % Algorithm parameters
     PATCH_SIZE = 40;
     NUM_HIST_BINS = 10;
+
+    FEATURES_HUE = true;
+    FEATURES_SAT = true;
+    FEATURES_HOG = true;
     
+    ENABLE_SVM = true;
+    ENABLE_THRESH = true;
   end
 end
