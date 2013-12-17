@@ -1,6 +1,6 @@
 close all;
-VIDEO_FILE = '/Users/jonathan/Downloads/output.mp4';
-OUTPUT = '/Users/jonathan/Downloads/output.mp4.mat';
+VIDEO_FILE = '/Users/jonathan/Downloads/test2.mp4';
+OUTPUT = '/Users/jonathan/Downloads/test2.mp4.mat';
 
 video_source = vision.VideoFileReader(VIDEO_FILE, 'ImageColorSpace', 'RGB', 'VideoOutputDataType', 'uint8');
 
